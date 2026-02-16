@@ -53,6 +53,17 @@ def register_socketio_events(socketio):
     def handle_detection_disconnect():
         """客户端断开"""
         print('客户端已断开车辆识别流连接')
+    
+    @socketio.on('connect', namespace='/stream/video')
+    def handle_video_connect():
+        """客户端连接视频流"""
+        print('客户端已连接到视频流')
+        emit('connected', {'message': '已连接到视频实时流'})
+    
+    @socketio.on('disconnect', namespace='/stream/video')
+    def handle_video_disconnect():
+        """客户端断开视频流"""
+        print('客户端已断开视频流连接')
 
 def send_traffic_data(data):
     """发送车流量数据到WebSocket"""
@@ -63,6 +74,11 @@ def send_detection_data(data):
     """发送车辆识别数据到WebSocket"""
     if socketio_instance:
         socketio_instance.emit('detection_data', data, namespace='/stream/detection')
+
+def send_video_frame(frame_data):
+    """发送视频帧到WebSocket"""
+    if socketio_instance:
+        socketio_instance.emit('video_frame', frame_data, namespace='/stream/video')
 
 @streaming_bp.route('/traffic/stats', methods=['GET'])
 def get_traffic_stats():

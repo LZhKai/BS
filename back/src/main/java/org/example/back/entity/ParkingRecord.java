@@ -4,26 +4,26 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 车辆实体类
+ * 停车记录实体类
  */
 @Data
-@TableName("vehicle")
-public class Vehicle {
+@TableName("parking_record")
+public class ParkingRecord {
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long vehicleId;
     private String plateNumber;
-    private Long ownerId;
-    private String ownerName;
-    private String ownerPhone;
-    /** 品牌型号 */
-    private String brandModel;
-    /** 车辆特性描述 */
-    private String description;
+    private LocalDateTime entryTime;
+    private LocalDateTime exitTime;
+    private Integer parkingDuration;
+    private BigDecimal parkingFee;
+    private String gateNumber;
     private String status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }
-

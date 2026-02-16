@@ -30,6 +30,15 @@ app.config.from_object(Config)
 # 启用CORS
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+# 配置静态文件服务（用于访问视频文件）
+from flask import send_from_directory
+import os
+
+@app.route('/videos/<path:filename>')
+def serve_video(filename):
+    """提供视频文件访问"""
+    return send_from_directory(Config.VIDEO_DIR, filename)
+
 # 初始化SocketIO（使用threading模式，更稳定）
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 

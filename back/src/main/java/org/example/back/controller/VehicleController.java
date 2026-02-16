@@ -7,7 +7,9 @@ import org.example.back.common.PageResult;
 import org.example.back.common.Result;
 import org.example.back.dto.VehicleDTO;
 import org.example.back.entity.Vehicle;
+import org.example.back.entity.VehicleOwner;
 import org.example.back.service.VehicleService;
+import org.example.back.service.VehicleOwnerService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,8 @@ public class VehicleController {
     
     @Autowired
     private VehicleService vehicleService;
+    @Autowired
+    private VehicleOwnerService vehicleOwnerService;
 
     /**
      * 分页查询车辆列表
@@ -73,7 +77,7 @@ public class VehicleController {
         if (vehicle.getStatus() == null) {
             vehicle.setStatus("NORMAL");
         }
-        
+        fillOwnerInfo(vehicle);
         vehicleService.save(vehicle);
         return Result.success("新增成功");
     }
@@ -99,8 +103,20 @@ public class VehicleController {
         
         BeanUtils.copyProperties(vehicleDTO, vehicle);
         vehicle.setId(id);
+        fillOwnerInfo(vehicle);
         vehicleService.updateById(vehicle);
         return Result.success("更新成功");
+    }
+
+    /** 根据 ownerId 填充车主姓名、电话 */
+    private void fillOwnerInfo(Vehicle vehicle) {
+        if (vehicle.getOwnerId() != null) {
+            VehicleOwner owner = vehicleOwnerService.getById(vehicle.getOwnerId());
+            if (owner != null) {
+                vehicle.setOwnerName(owner.getName());
+                vehicle.setOwnerPhone(owner.getPhone());
+            }
+        }
     }
 
     /**

@@ -36,6 +36,14 @@ def detection_callback(result):
     # TODO: 可以同时发送到Kafka
     # kafka_producer.send(Config.KAFKA_TOPIC_VEHICLE, json.dumps(result))
 
+def frame_callback(frame_data):
+    """视频帧回调（发送到前端）"""
+    try:
+        from src.api.streaming_api import send_video_frame
+        send_video_frame(frame_data)
+    except Exception as e:
+        print(f"发送视频帧失败: {e}")
+
 @video_bp.route('/video/start', methods=['POST'])
 def start_video_processing():
     """启动视频处理"""
@@ -51,7 +59,7 @@ def start_video_processing():
         data = request.get_json() or {}
         source = data.get('source', None)
         
-        video_processor = VideoProcessor(callback=detection_callback)
+        video_processor = VideoProcessor(callback=detection_callback, frame_callback=frame_callback)
         video_processor.start(source)
         
         return jsonify({

@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Layout from '../layout/Layout.vue'
 import VehicleList from '../views/VehicleList.vue'
+import OwnerList from '../views/OwnerList.vue'
+import ParkingRecordList from '../views/ParkingRecordList.vue'
 import TrafficFlow from '../views/TrafficFlow.vue'
 import VehicleDetection from '../views/VehicleDetection.vue'
 
@@ -20,6 +22,16 @@ const routes = [
         path: '/vehicle',
         name: 'VehicleList',
         component: VehicleList
+      },
+      {
+        path: '/owner',
+        name: 'OwnerList',
+        component: OwnerList
+      },
+      {
+        path: '/parking',
+        name: 'ParkingRecordList',
+        component: ParkingRecordList
       },
       {
         path: '/traffic',

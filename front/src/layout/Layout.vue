@@ -30,6 +30,14 @@
             <el-icon><Truck /></el-icon>
             <span>车辆管理</span>
           </el-menu-item>
+          <el-menu-item index="/owner">
+            <el-icon><User /></el-icon>
+            <span>车主管理</span>
+          </el-menu-item>
+          <el-menu-item index="/parking">
+            <el-icon><Document /></el-icon>
+            <span>停车记录</span>
+          </el-menu-item>
           <el-menu-item index="/traffic">
             <el-icon><DataAnalysis /></el-icon>
             <span>车流量统计</span>

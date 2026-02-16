@@ -62,6 +62,8 @@
         <el-table-column prop="plateNumber" label="车牌号" width="150" />
         <el-table-column prop="ownerName" label="车主姓名" width="120" />
         <el-table-column prop="ownerPhone" label="车主电话" width="150" />
+        <el-table-column prop="brandModel" label="品牌型号" width="140" show-overflow-tooltip />
+        <el-table-column prop="description" label="车辆描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="scope">
             <el-tag v-if="scope.row.status === 'NORMAL'" type="success">正常</el-tag>
@@ -127,11 +129,27 @@
         <el-form-item label="车牌号" prop="plateNumber">
           <el-input v-model="formData.plateNumber" placeholder="请输入车牌号" />
         </el-form-item>
+        <el-form-item label="关联车主">
+          <el-select v-model="formData.ownerId" placeholder="请选择车主（可选）" clearable style="width: 100%" @change="onOwnerChange">
+            <el-option
+              v-for="item in ownerList"
+              :key="item.id"
+              :label="`${item.name} - ${item.phone || ''}`"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="车主姓名" prop="ownerName">
-          <el-input v-model="formData.ownerName" placeholder="请输入车主姓名" />
+          <el-input v-model="formData.ownerName" placeholder="请输入或由关联车主自动带出" />
         </el-form-item>
         <el-form-item label="车主电话" prop="ownerPhone">
-          <el-input v-model="formData.ownerPhone" placeholder="请输入车主电话" />
+          <el-input v-model="formData.ownerPhone" placeholder="请输入或由关联车主自动带出" />
+        </el-form-item>
+        <el-form-item label="品牌型号" prop="brandModel">
+          <el-input v-model="formData.brandModel" placeholder="如：大众帕萨特、丰田汉兰达" />
+        </el-form-item>
+        <el-form-item label="车辆描述" prop="description">
+          <el-input v-model="formData.description" type="textarea" :rows="5" placeholder="车辆特性描述，可写较多内容：颜色、配置、常停位置、备注等" maxlength="2000" show-word-limit />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="formData.status" placeholder="请选择状态" style="width: 100%">
@@ -159,8 +177,10 @@ import {
   deleteVehicle,
   deleteVehicleBatch
 } from '../api/vehicle'
+import { getOwnerList } from '../api/owner'
 
 const loading = ref(false)
+const ownerList = ref([])
 const tableData = ref([])
 const selectedIds = ref([])
 const dialogVisible = ref(false)
@@ -183,8 +203,11 @@ const pagination = reactive({
 
 const formData = reactive({
   plateNumber: '',
+  ownerId: null,
   ownerName: '',
   ownerPhone: '',
+  brandModel: '',
+  description: '',
   status: 'NORMAL'
 })
 
@@ -331,8 +354,11 @@ const handleSubmit = async () => {
 // 重置表单
 const resetForm = () => {
   formData.plateNumber = ''
+  formData.ownerId = null
   formData.ownerName = ''
   formData.ownerPhone = ''
+  formData.brandModel = ''
+  formData.description = ''
   formData.status = 'NORMAL'
   if (formRef.value) {
     formRef.value.resetFields()
@@ -346,8 +372,30 @@ const handleDialogClose = () => {
   currentId.value = null
 }
 
-onMounted(() => {
+// 选择车主时自动带出姓名、电话
+const onOwnerChange = (ownerId) => {
+  if (!ownerId) {
+    formData.ownerName = ''
+    formData.ownerPhone = ''
+    return
+  }
+  const owner = ownerList.value.find(o => o.id === ownerId)
+  if (owner) {
+    formData.ownerName = owner.name
+    formData.ownerPhone = owner.phone || ''
+  }
+}
+
+onMounted(async () => {
   loadData()
+  try {
+    const res = await getOwnerList()
+    if (res.code === 200) {
+      ownerList.value = res.data || []
+    }
+  } catch (e) {
+    console.error('加载车主列表失败', e)
+  }
 })
 </script>
 

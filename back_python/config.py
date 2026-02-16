@@ -32,10 +32,19 @@ class Config:
     SPARK_APP_NAME = 'VehicleManagementStreaming'
     
     # 视频处理配置
-    VIDEO_SOURCE = os.getenv('VIDEO_SOURCE', '0')  # 0为摄像头，也可以是视频文件路径
+    VIDEO_SOURCE = os.getenv('VIDEO_SOURCE', 'videos/test_video.mp4')  # 视频文件路径，格式：videos/文件名.mp4，或使用摄像头：0
     VIDEO_FPS = int(os.getenv('VIDEO_FPS', 30))
     VIDEO_WIDTH = int(os.getenv('VIDEO_WIDTH', 1280))
     VIDEO_HEIGHT = int(os.getenv('VIDEO_HEIGHT', 720))
+    
+    # 视频文件目录（back_python/videos）
+    _base_dir = os.path.dirname(os.path.abspath(__file__))  # back_python目录
+    VIDEO_DIR = os.path.join(_base_dir, 'videos')
+    
+    @staticmethod
+    def get_video_path(filename):
+        """获取视频文件的完整路径"""
+        return os.path.join(Config.VIDEO_DIR, filename)
     
     # YOLO模型配置
     YOLO_MODEL_PATH = os.getenv('YOLO_MODEL_PATH', 'models/yolo/yolov8n.pt')
