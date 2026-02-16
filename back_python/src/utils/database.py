@@ -5,8 +5,9 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from config import Config
 
-# 创建数据库引擎
-engine = create_engine(Config.MYSQL_URL, pool_pre_ping=True)
+# 创建数据库引擎（需要先实例化 Config，再取 MYSQL_URL 属性）
+_cfg = Config()
+engine = create_engine(_cfg.MYSQL_URL, pool_pre_ping=True)
 
 # 创建会话工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

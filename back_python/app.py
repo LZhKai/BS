@@ -24,6 +24,14 @@ except ImportError as e:
     VIDEO_AVAILABLE = False
     video_bp = None
 
+try:
+    from src.api.rag_api import rag_bp
+    RAG_AVAILABLE = True
+except ImportError as e:
+    print(f"警告: 无法导入rag_api: {e}")
+    RAG_AVAILABLE = False
+    rag_bp = None
+
 app = Flask(__name__)
 app.config.from_object(Config)
 
@@ -47,6 +55,8 @@ if STREAMING_AVAILABLE and streaming_bp:
     app.register_blueprint(streaming_bp, url_prefix='/api')
 if VIDEO_AVAILABLE and video_bp:
     app.register_blueprint(video_bp, url_prefix='/api')
+if RAG_AVAILABLE and rag_bp:
+    app.register_blueprint(rag_bp, url_prefix='/api')
 
 # 导入SocketIO事件处理（如果可用）
 if STREAMING_AVAILABLE:

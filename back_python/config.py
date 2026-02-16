@@ -58,3 +58,18 @@ class Config:
         """MySQL连接URL"""
         return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}?charset=utf8mb4"
 
+    # --- RAG / 向量检索与大模型配置 ---
+    # Milvus 向量数据库
+    MILVUS_HOST = os.getenv('MILVUS_HOST', 'localhost')
+    MILVUS_PORT = int(os.getenv('MILVUS_PORT', 19530))
+    MILVUS_COLLECTION = os.getenv('MILVUS_COLLECTION', 'vehicle_info')
+
+    # 嵌入模型
+    EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
+
+    # 大模型 API（如 DeepSeek，经由 SiliconFlow 或兼容 OpenAI 接口）
+    LLM_API_URL = os.getenv('LLM_API_URL', 'https://api.siliconflow.cn/v1/chat/completions')
+    LLM_API_KEY = os.getenv('LLM_API_KEY', 'sk-judrfulsjhqnphriiqiisxxbkuojbautpilrpqnqcvpkwjcb')
+    LLM_MODEL = os.getenv('LLM_MODEL', 'deepseek-ai/DeepSeek-V3')
+
+

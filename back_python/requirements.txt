@@ -26,3 +26,9 @@ sqlalchemy==2.0.23
 python-dotenv==1.0.0
 # eventlet==0.33.3  # 已移除，改用threading模式
 
+# RAG / 向量检索与大模型
+pymilvus==2.3.4
+sentence-transformers==2.2.2
+requests==2.31.0
+
+

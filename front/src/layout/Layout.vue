@@ -38,6 +38,10 @@
             <el-icon><Document /></el-icon>
             <span>停车记录</span>
           </el-menu-item>
+          <el-menu-item index="/rag">
+            <el-icon><ChatLineRound /></el-icon>
+            <span>智能问答</span>
+          </el-menu-item>
           <el-menu-item index="/traffic">
             <el-icon><DataAnalysis /></el-icon>
             <span>车流量统计</span>

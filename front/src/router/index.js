@@ -6,6 +6,7 @@ import OwnerList from '../views/OwnerList.vue'
 import ParkingRecordList from '../views/ParkingRecordList.vue'
 import TrafficFlow from '../views/TrafficFlow.vue'
 import VehicleDetection from '../views/VehicleDetection.vue'
+import RAGChat from '../views/RAGChat.vue'
 
 const routes = [
   {
@@ -32,6 +33,11 @@ const routes = [
         path: '/parking',
         name: 'ParkingRecordList',
         component: ParkingRecordList
+      },
+      {
+        path: '/rag',
+        name: 'RAGChat',
+        component: RAGChat
       },
       {
         path: '/traffic',
