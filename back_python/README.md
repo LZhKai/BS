@@ -106,3 +106,9 @@ python app.py
 - `POST /api/video/process` - 处理视频流
 - `GET /api/detection/history` - 获取识别历史
 
+### Plate Recognition APIs
+
+- `POST /api/plate/recognize` - upload image (`file`) and recognize plate
+- `POST /api/plate/vehicle/save` - confirm and save recognized vehicle into `vehicle`
+- `GET /api/plate/records` - list recognition records (paged)
+

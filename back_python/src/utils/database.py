@@ -1,35 +1,39 @@
 """
-数据库工具类
+Database helper utilities.
 """
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
 from config import Config
 
-# 创建数据库引擎（需要先实例化 Config，再取 MYSQL_URL 属性）
 _cfg = Config()
 engine = create_engine(_cfg.MYSQL_URL, pool_pre_ping=True)
-
-# 创建会话工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 def get_db():
-    """获取数据库会话"""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
+
 def execute_query(sql, params=None):
-    """执行查询"""
     with engine.connect() as conn:
         result = conn.execute(text(sql), params or {})
         return result.fetchall()
 
+
 def execute_update(sql, params=None):
-    """执行更新"""
     with engine.connect() as conn:
         result = conn.execute(text(sql), params or {})
         conn.commit()
         return result.rowcount
 
+
+def execute_insert(sql, params=None):
+    with engine.connect() as conn:
+        result = conn.execute(text(sql), params or {})
+        conn.commit()
+        return result.lastrowid

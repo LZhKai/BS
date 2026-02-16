@@ -7,6 +7,7 @@ import ParkingRecordList from '../views/ParkingRecordList.vue'
 import TrafficFlow from '../views/TrafficFlow.vue'
 import VehicleDetection from '../views/VehicleDetection.vue'
 import RAGChat from '../views/RAGChat.vue'
+import PlateRecognition from '../views/PlateRecognition.vue'
 
 const routes = [
   {
@@ -48,6 +49,11 @@ const routes = [
         path: '/detection',
         name: 'VehicleDetection',
         component: VehicleDetection
+      },
+      {
+        path: '/plate-recognition',
+        name: 'PlateRecognition',
+        component: PlateRecognition
       }
     ]
   }
@@ -73,4 +79,3 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
-

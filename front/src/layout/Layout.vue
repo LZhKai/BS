@@ -50,6 +50,10 @@
             <el-icon><VideoCamera /></el-icon>
             <span>车辆识别</span>
           </el-menu-item>
+          <el-menu-item index="/plate-recognition">
+            <el-icon><Document /></el-icon>
+            <span>车牌识别入库</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main class="layout-main">
@@ -152,4 +156,3 @@ const handleCommand = (command) => {
   padding: 20px;
 }
 </style>
-

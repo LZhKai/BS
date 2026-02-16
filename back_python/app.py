@@ -32,6 +32,14 @@ except ImportError as e:
     RAG_AVAILABLE = False
     rag_bp = None
 
+try:
+    from src.api.plate_api import plate_bp
+    PLATE_AVAILABLE = True
+except ImportError as e:
+    print(f"警告: 无法导入plate_api: {e}")
+    PLATE_AVAILABLE = False
+    plate_bp = None
+
 app = Flask(__name__)
 app.config.from_object(Config)
 app.json.ensure_ascii = False
@@ -59,6 +67,8 @@ if VIDEO_AVAILABLE and video_bp:
     app.register_blueprint(video_bp, url_prefix='/api')
 if RAG_AVAILABLE and rag_bp:
     app.register_blueprint(rag_bp, url_prefix='/api')
+if PLATE_AVAILABLE and plate_bp:
+    app.register_blueprint(plate_bp, url_prefix='/api')
 
 # 导入SocketIO事件处理（如果可用）
 if STREAMING_AVAILABLE:

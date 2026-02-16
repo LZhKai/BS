@@ -52,6 +52,9 @@ class Config:
     
     # 车牌识别配置（可选）
     PLATE_RECOGNITION_ENABLED = os.getenv('PLATE_RECOGNITION_ENABLED', 'False').lower() == 'true'
+    PLATE_UPLOAD_DIR = os.getenv('PLATE_UPLOAD_DIR', os.path.join(_base_dir, 'uploads', 'plates'))
+    MAX_UPLOAD_MB = int(os.getenv('MAX_UPLOAD_MB', 10))
+    EASYOCR_LANGS = os.getenv('EASYOCR_LANGS', 'ch_sim,en')
     
     @property
     def MYSQL_URL(self):
@@ -71,5 +74,4 @@ class Config:
     LLM_API_URL = os.getenv('LLM_API_URL', 'https://api.siliconflow.cn/v1/chat/completions')
     LLM_API_KEY = os.getenv('LLM_API_KEY', 'sk-judrfulsjhqnphriiqiisxxbkuojbautpilrpqnqcvpkwjcb')
     LLM_MODEL = os.getenv('LLM_MODEL', 'deepseek-ai/DeepSeek-V3')
-
 

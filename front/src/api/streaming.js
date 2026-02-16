@@ -22,7 +22,7 @@ class StreamingWebSocket {
     // 使用Socket.IO客户端连接
     const wsUrl = `http://localhost:5000`
     this.trafficSocket = io(wsUrl + '/stream/traffic', {
-      transports: ['websocket', 'polling']
+      transports: ['polling']
     })
 
     this.trafficSocket.on('connect', () => {
@@ -59,7 +59,7 @@ class StreamingWebSocket {
     // 使用Socket.IO客户端连接
     const wsUrl = `http://localhost:5000`
     this.detectionSocket = io(wsUrl + '/stream/detection', {
-      transports: ['websocket', 'polling']
+      transports: ['polling']
     })
 
     this.detectionSocket.on('connect', () => {
@@ -135,7 +135,7 @@ class StreamingWebSocket {
 
     const wsUrl = `http://localhost:5000`
     this.videoSocket = io(wsUrl + '/stream/video', {
-      transports: ['websocket', 'polling']
+      transports: ['polling']
     })
 
     this.videoSocket.on('connect', () => {
