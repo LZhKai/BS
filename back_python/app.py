@@ -34,6 +34,8 @@ except ImportError as e:
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.json.ensure_ascii = False
+app.config["JSONIFY_MIMETYPE"] = "application/json; charset=utf-8"
 
 # 启用CORS
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -78,4 +80,3 @@ def index():
 if __name__ == '__main__':
     print(f"启动Python后端服务: http://{Config.HOST}:{Config.PORT}")
     socketio.run(app, host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)
-

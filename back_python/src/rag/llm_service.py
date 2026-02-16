@@ -114,6 +114,9 @@ def stream_ask_about_vehicles(
         timeout=300,
     ) as resp:
         resp.raise_for_status()
+        # Some SSE endpoints omit charset; requests may fall back to latin-1.
+        # Force UTF-8 to avoid mojibake for Chinese tokens.
+        resp.encoding = "utf-8"
         for line in resp.iter_lines(decode_unicode=True):
             if not line:
                 continue
@@ -138,5 +141,4 @@ def stream_ask_about_vehicles(
             chunk = delta.get("content") or ""
             if chunk:
                 yield chunk
-
 
