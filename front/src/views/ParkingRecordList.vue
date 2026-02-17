@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="parking-container">
     <el-card>
       <template #header>
@@ -82,7 +82,7 @@
         <el-form-item label="关联车辆" prop="vehicleId">
           <el-select
             v-model="formData.vehicleId"
-            placeholder="请选择车辆（可选）"
+            placeholder="请选择车辆"
             clearable
             filterable
             style="width: 100%"
@@ -145,12 +145,14 @@ import {
   getParkingPage,
   saveParking,
   updateParking,
-  deleteParking
+  deleteParking,
+  getParkingList
 } from '../api/parking'
 import { getVehicleList } from '../api/vehicle'
 
 const loading = ref(false)
 const vehicleList = ref([])
+const allVehicleList = ref([])
 const tableData = ref([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增记录')
@@ -197,11 +199,15 @@ const loadData = async () => {
       tableData.value = res.data.records
       pagination.total = res.data.total
     }
-  } catch (error) {
-    console.error('加载数据失败:', error)
   } finally {
     loading.value = false
   }
+}
+
+const refreshVehicleOptions = async (editingVehicleId = null) => {
+  const parkingRes = await getParkingList({ status: 'PARKING' })
+  const busyIds = new Set((parkingRes?.data || []).map((r) => r.vehicleId).filter(Boolean))
+  vehicleList.value = allVehicleList.value.filter((v) => !busyIds.has(v.id) || v.id === editingVehicleId)
 }
 
 const handleSearch = () => {
@@ -215,14 +221,15 @@ const handleReset = () => {
   handleSearch()
 }
 
-const handleAdd = () => {
+const handleAdd = async () => {
   isEdit.value = false
   dialogTitle.value = '新增记录'
-  dialogVisible.value = true
   resetForm()
+  await refreshVehicleOptions()
+  dialogVisible.value = true
 }
 
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
   isEdit.value = true
   dialogTitle.value = '编辑记录'
   currentId.value = row.id
@@ -233,6 +240,7 @@ const handleEdit = (row) => {
   formData.gateNumber = row.gateNumber || ''
   formData.status = row.status || 'PARKING'
   formData.parkingFee = row.parkingFee != null ? Number(row.parkingFee) : 0
+  await refreshVehicleOptions(row.vehicleId)
   dialogVisible.value = true
 }
 
@@ -242,14 +250,10 @@ const handleDelete = (row) => {
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
-    try {
-      const res = await deleteParking(row.id)
-      if (res.code === 200) {
-        ElMessage.success('删除成功')
-        loadData()
-      }
-    } catch (error) {
-      console.error('删除失败:', error)
+    const res = await deleteParking(row.id)
+    if (res.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
     }
   })
 }
@@ -269,28 +273,27 @@ const onVehicleChange = (vehicleId) => {
 const handleSubmit = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        const payload = {
-          vehicleId: formData.vehicleId || undefined,
-          plateNumber: formData.plateNumber,
-          entryTime: formData.entryTime,
-          exitTime: formData.exitTime || null,
-          gateNumber: formData.gateNumber || null,
-          status: formData.status,
-          parkingFee: formData.parkingFee
-        }
-        const res = isEdit.value
-          ? await updateParking(currentId.value, payload)
-          : await saveParking(payload)
-        if (res.code === 200) {
-          ElMessage.success(isEdit.value ? '更新成功' : '新增成功')
-          dialogVisible.value = false
-          loadData()
-        }
-      } catch (error) {
-        console.error('提交失败:', error)
-      }
+    if (!valid) return
+    const payload = {
+      vehicleId: formData.vehicleId || undefined,
+      plateNumber: formData.plateNumber,
+      entryTime: formData.entryTime,
+      exitTime: formData.exitTime || null,
+      gateNumber: formData.gateNumber || null,
+      status: formData.status,
+      parkingFee: formData.parkingFee
+    }
+    const res = isEdit.value
+      ? await updateParking(currentId.value, payload)
+      : await saveParking(payload)
+
+    if (res.code === 200) {
+      ElMessage.success(isEdit.value ? '更新成功' : '新增成功')
+      dialogVisible.value = false
+      loadData()
+      await refreshVehicleOptions()
+    } else {
+      ElMessage.error(res.message || '操作失败')
     }
   })
 }
@@ -317,7 +320,8 @@ onMounted(async () => {
   try {
     const res = await getVehicleList()
     if (res.code === 200) {
-      vehicleList.value = res.data || []
+      allVehicleList.value = res.data || []
+      await refreshVehicleOptions()
     }
   } catch (e) {
     console.error('加载车辆列表失败', e)
@@ -329,14 +333,17 @@ onMounted(async () => {
 .parking-container {
   height: 100%;
 }
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .search-form {
   margin-bottom: 20px;
 }
+
 .pagination-container {
   margin-top: 20px;
   display: flex;

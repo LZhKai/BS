@@ -1,5 +1,6 @@
 package org.example.back.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.back.common.PageResult;
@@ -11,9 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * 停车记录控制器
- */
 @RestController
 @RequestMapping("/api/parking")
 @CrossOrigin(origins = "*")
@@ -30,7 +28,7 @@ public class ParkingRecordController {
             @RequestParam(required = false) String plateNumber,
             @RequestParam(required = false) String status) {
         Page<ParkingRecord> page = new Page<>(current, size);
-        var wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ParkingRecord>();
+        LambdaQueryWrapper<ParkingRecord> wrapper = new LambdaQueryWrapper<>();
         if (vehicleId != null) {
             wrapper.eq(ParkingRecord::getVehicleId, vehicleId);
         }
@@ -59,9 +57,17 @@ public class ParkingRecordController {
         if (record.getVehicleId() == null || record.getPlateNumber() == null || record.getEntryTime() == null) {
             return Result.error("车辆ID、车牌号、进入时间不能为空");
         }
-        if (record.getStatus() == null) {
+        if (record.getStatus() == null || record.getStatus().isBlank()) {
             record.setStatus("PARKING");
         }
+
+        LambdaQueryWrapper<ParkingRecord> activeWrapper = new LambdaQueryWrapper<>();
+        activeWrapper.eq(ParkingRecord::getVehicleId, record.getVehicleId())
+                .eq(ParkingRecord::getStatus, "PARKING");
+        if (parkingRecordService.count(activeWrapper) > 0) {
+            return Result.error("该车辆已有在场停车记录，请先离场后再新增");
+        }
+
         parkingRecordService.save(record);
         return Result.success("新增成功");
     }
@@ -71,6 +77,17 @@ public class ParkingRecordController {
         if (parkingRecordService.getById(id) == null) {
             return Result.error("记录不存在");
         }
+
+        if (record.getVehicleId() != null) {
+            LambdaQueryWrapper<ParkingRecord> activeWrapper = new LambdaQueryWrapper<>();
+            activeWrapper.eq(ParkingRecord::getVehicleId, record.getVehicleId())
+                    .eq(ParkingRecord::getStatus, "PARKING")
+                    .ne(ParkingRecord::getId, id);
+            if (parkingRecordService.count(activeWrapper) > 0) {
+                return Result.error("该车辆已有其他在场停车记录，无法更新");
+            }
+        }
+
         record.setId(id);
         parkingRecordService.updateById(record);
         return Result.success("更新成功");
@@ -86,10 +103,14 @@ public class ParkingRecordController {
     }
 
     @GetMapping("/list")
-    public Result<List<ParkingRecord>> list(@RequestParam(required = false) Long vehicleId) {
-        var wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ParkingRecord>();
+    public Result<List<ParkingRecord>> list(@RequestParam(required = false) Long vehicleId,
+                                            @RequestParam(required = false) String status) {
+        LambdaQueryWrapper<ParkingRecord> wrapper = new LambdaQueryWrapper<>();
         if (vehicleId != null) {
             wrapper.eq(ParkingRecord::getVehicleId, vehicleId);
+        }
+        if (status != null && !status.isBlank()) {
+            wrapper.eq(ParkingRecord::getStatus, status);
         }
         wrapper.orderByDesc(ParkingRecord::getEntryTime);
         return Result.success(parkingRecordService.list(wrapper));

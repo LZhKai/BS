@@ -15,7 +15,6 @@
         </div>
       </template>
 
-      <!-- 统计卡片 -->
       <el-row :gutter="20" class="stats-row">
         <el-col :span="6">
           <el-card class="stat-card">
@@ -51,7 +50,6 @@
         </el-col>
       </el-row>
 
-      <!-- 图表区域 -->
       <el-row :gutter="20" style="margin-top: 20px">
         <el-col :span="12">
           <el-card>
@@ -71,7 +69,6 @@
         </el-col>
       </el-row>
 
-      <!-- 实时数据表格 -->
       <el-card style="margin-top: 20px">
         <template #header>
           <span>实时数据流</span>
@@ -91,7 +88,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { streamingWS } from '../api/streaming'
+import { streamingWS, getTrafficStats } from '../api/streaming'
 
 const isConnected = ref(false)
 const trafficChartRef = ref(null)
@@ -107,9 +104,8 @@ const stats = ref({
 })
 
 const realtimeData = ref([])
-const maxDataPoints = 20 // 最多显示20条数据
+const maxDataPoints = 20
 
-// 时间序列数据
 const timeSeriesData = {
   timestamps: [],
   entryData: [],
@@ -117,9 +113,7 @@ const timeSeriesData = {
   totalData: []
 }
 
-// 初始化图表
 const initCharts = () => {
-  // 车流量趋势图
   trafficChart = echarts.init(trafficChartRef.value)
   trafficChart.setOption({
     title: {
@@ -163,7 +157,6 @@ const initCharts = () => {
     ]
   })
 
-  // 进出车辆对比图
   comparisonChart = echarts.init(comparisonChartRef.value)
   comparisonChart.setOption({
     title: {
@@ -203,17 +196,17 @@ const initCharts = () => {
   })
 }
 
-// 更新图表数据
 const updateCharts = (data) => {
-  const timestamp = new Date(data.timestamp).toLocaleTimeString()
-  
-  // 更新时间序列数据
-  timeSeriesData.timestamps.push(timestamp)
-  timeSeriesData.entryData.push(data.entryCount || 0)
-  timeSeriesData.exitData.push(data.exitCount || 0)
-  timeSeriesData.totalData.push(data.totalCount || 0)
+  const entryCount = data.entryCount ?? data.entry_count ?? 0
+  const exitCount = data.exitCount ?? data.exit_count ?? 0
+  const totalCount = data.totalCount ?? data.total_count ?? (entryCount + exitCount)
+  const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString()
 
-  // 限制数据点数量
+  timeSeriesData.timestamps.push(timestamp)
+  timeSeriesData.entryData.push(entryCount)
+  timeSeriesData.exitData.push(exitCount)
+  timeSeriesData.totalData.push(totalCount)
+
   if (timeSeriesData.timestamps.length > maxDataPoints) {
     timeSeriesData.timestamps.shift()
     timeSeriesData.entryData.shift()
@@ -221,7 +214,6 @@ const updateCharts = (data) => {
     timeSeriesData.totalData.shift()
   }
 
-  // 更新趋势图
   trafficChart.setOption({
     xAxis: {
       data: timeSeriesData.timestamps
@@ -239,7 +231,6 @@ const updateCharts = (data) => {
     ]
   })
 
-  // 更新对比图
   comparisonChart.setOption({
     xAxis: {
       data: timeSeriesData.timestamps
@@ -254,33 +245,43 @@ const updateCharts = (data) => {
     ]
   })
 
-  // 更新实时数据表格
   realtimeData.value.unshift({
-    timestamp: timestamp,
-    entryCount: data.entryCount || 0,
-    exitCount: data.exitCount || 0,
-    totalCount: data.totalCount || 0
+    timestamp,
+    entryCount,
+    exitCount,
+    totalCount
   })
-  
+
   if (realtimeData.value.length > maxDataPoints) {
     realtimeData.value.pop()
   }
 
-  // 更新统计数据
-  stats.value.entryCount += data.entryCount || 0
-  stats.value.exitCount += data.exitCount || 0
+  stats.value.entryCount += entryCount
+  stats.value.exitCount += exitCount
   stats.value.todayCount = stats.value.entryCount + stats.value.exitCount
-  stats.value.currentHourCount = data.totalCount || 0
+  stats.value.currentHourCount = totalCount
 }
 
-// 处理WebSocket数据
 const handleTrafficData = (data) => {
   if (data.type === 'traffic_data') {
     updateCharts(data.data)
   }
 }
 
-// 切换连接
+const loadInitialStats = async () => {
+  try {
+    const res = await getTrafficStats()
+    if (res.code === 200 && res.data) {
+      stats.value.todayCount = res.data.todayCount ?? res.data.today_count ?? 0
+      stats.value.currentHourCount = res.data.currentHourCount ?? res.data.current_hour_count ?? 0
+      stats.value.entryCount = res.data.entryCount ?? res.data.entry_count ?? 0
+      stats.value.exitCount = res.data.exitCount ?? res.data.exit_count ?? 0
+    }
+  } catch (error) {
+    // ignore initial stats failure
+  }
+}
+
 const toggleConnection = () => {
   if (isConnected.value) {
     streamingWS.disconnectTraffic()
@@ -292,17 +293,17 @@ const toggleConnection = () => {
         isConnected.value = true
         ElMessage.success('已连接数据流')
       } else if (status === 'error') {
-        ElMessage.error('连接失败，请检查Python后端服务是否启动')
+        ElMessage.error('连接失败，请检查 Python 后端服务是否启动')
       }
     })
-    
+
     streamingWS.subscribeTraffic(handleTrafficData)
   }
 }
 
 onMounted(() => {
   initCharts()
-  // 自动连接
+  loadInitialStats()
   toggleConnection()
 })
 
@@ -352,4 +353,3 @@ onBeforeUnmount(() => {
   color: #666;
 }
 </style>
-
