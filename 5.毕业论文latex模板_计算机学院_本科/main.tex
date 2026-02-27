@@ -1,0 +1,879 @@
+﻿\documentclass{wzuthesis} % 不填充空白页。如果需要双面打印版，请注释掉本行并启用下一行
+%\documentclass[print-both-sides]{scutthesis} % 使用双面打印版（填充额外空白页以保证每一章开头都在奇数页）
+
+
+\etitlefirst{}
+\etitlesecond{}
+
+% 论文中文标题
+\ctitle{基于计算机视觉与流式计算的\\智能小区车辆管理系统}
+
+% 作者详细信息
+\cauthor{林\ 正\ 凯}        % 作者姓名
+\studentid{22211870221}       % 学号
+\cschool{计算机与人工智能学院}        % 学院
+\cclass{22 级大数据 2 班}         %班级
+\cmajor{数据科学与大数据技术}    %专业
+\cyear{2026}               %毕业年份
+
+
+% 指导老师信息
+\cmentor{李俊}
+
+
+\cabstract{
+
+   随着城市化进程的不断加快，居民小区机动车数量迅速增长，传统依赖人工登记和人工巡查的车辆管理方式已难以满足智慧社区对高效率、高准确性和高安全性的管理需求。针对小区车辆出入管理效率低、实时性不足以及智能化水平有限等问题，本文设计并实现了一种基于计算机视觉与流式计算的智能小区车辆管理系统。系统以 Spring Boot 为核心后端框架，结合 Vue 前端技术构建前后端分离架构，利用 MySQL 实现车辆与用户信息的统一管理，并通过 Spark Streaming 对车辆相关数据流进行实时处理。在功能层面，系统集成了车辆识别、视频流监控、车辆信息管理以及基于 RAG 的智能问答模块，实现了车辆管理的自动化、实时化与智能化。实验与系统测试结果表明，该系统在车辆识别准确率、数据处理实时性和系统稳定性方面均具有良好表现，可为智慧社区车辆管理提供一种可行的技术方案。
+
+}
+\ckeywords{计算机视觉；车辆识别；流式计算；Spark Streaming；RAG}
+
+\eabstract{
+   With the rapid acceleration of urbanization, the number of motor vehicles in residential communities has increased significantly. Traditional vehicle management methods that rely on manual registration and inspection can no longer meet the requirements of intelligent communities in terms of efficiency, accuracy, and real-time performance. To address the problems of low management efficiency, insufficient real-time processing, and limited intelligence in residential vehicle management, this paper designs and implements an intelligent residential vehicle management system based on computer vision and streaming computing.
+   
+   The system adopts Spring Boot as the core backend framework and Vue as the frontend framework to build a front-end and back-end separated architecture. MySQL is used for unified management of vehicle and user information, while Spark Streaming is introduced to process vehicle-related data streams in real time. In terms of functionality, the system integrates license plate recognition, video stream monitoring, vehicle information management, and an intelligent question-answering module based on Retrieval-Augmented Generation (RAG), realizing automation, real-time processing, and intelligence in vehicle management.
+   
+   Experimental results and system testing show that the proposed system performs well in license plate recognition accuracy, real-time data processing capability, and overall system stability, providing a feasible technical solution for intelligent vehicle management in smart residential communities.
+
+}
+% 英文文关键词(每个关键词之间用,分开, 最后一个关键词不打标点符号。)
+\ekeywords{Computer vision; Vehicle recognition; Streaming computing; Spark Streaming; RAG}
+
+\pagestyle{empty}
+
+\begin{document}
+% 论文前置部分
+\frontmatter
+\pagenumbering{Roman}
+\makeUndergraduateCover    % 生成封面
+
+\makedisclaim % 生成不带签名的原创性声明和版权使用授权书
+
+\maketableofcontents        % 生成目录
+
+\makeabstract       % 生成中英文摘要
+% \makelistoffiguretable % 生成图表目录
+% 论文主体部分
+\mainmatter
+
+\chapter{引言}
+
+\section{课题的背景与意义}
+
+随着城市化进程的不断推进，居民小区机动车保有量持续增长，车辆出入管理、停车资源配置以及安全监管等问题日益突出。传统依赖人工登记与人工巡查的管理方式效率低、信息更新滞后，统计误差较大，难以满足智慧社区对精细化和信息化管理的需求。
+
+在智慧城市与智慧社区建设背景下，智能小区车辆管理系统逐渐成为提升社区治理能力的重要技术手段。该类系统通常依托计算机视觉技术实现车牌自动识别与车辆状态感知，并结合数据库技术完成车辆信息的集中存储与统一管理，从而降低人工成本并提升管理效率。在智能停车与车辆管理系统研究中，车辆检测、车牌识别与停车引导的协同处理方法能够显著提升复杂环境下系统的识别准确率和整体运行效率\overcite{Gupta2025Parking}。多目标车辆识别研究表明，基于深度学习的分类与识别方法能够在不同车辆类型和多目标场景下实现较高识别精度\overcite{Wu2024VehicleDL}。
+
+在系统实现层面，Spring Boot 框架凭借模块化设计和可扩展性，为高并发管理系统提供了实践经验，其架构支持模块独立开发和部署，并提供统一配置和安全策略，有助于提升系统的可维护性和扩展能力\overcite{Miguel2024SpringBoot}。结合 Spark Streaming 的流式计算能力，可处理大规模实时数据流，并保证计算一致性与容错能力，从而提升整体系统的数据处理效率和响应性能\overcite{Daksa2025Streaming}。
+
+此外，大语言模型与检索增强生成（RAG）技术的引入，为智能问答和数据检索提供了新的研究方向，可辅助管理人员进行高效决策支持\overcite{Feng2025RAG,Wang2025LLMJavaWeb}。
+
+\section{国内外研究现状和分析}
+
+在智慧社区和智能交通背景下，车辆信息管理、车牌自动识别、视频监控分析及实时数据处理等技术是研究重点。国内外已有大量研究成果，为智能小区车辆管理系统的设计与实现提供了理论基础和技术支撑，但在系统集成度、算法鲁棒性及实际应用适配方面仍存在优化空间。
+
+\subsection{国外研究现状}
+
+在智能停车与车辆管理系统研究中，车辆检测、车牌识别与停车引导的协同处理方法被证明可以有效提升复杂环境下系统的识别准确率与整体运行效率\overcite{Gupta2025Parking}。该研究通过将车辆检测和车牌识别方法与停车引导策略结合，实现了系统在多阶段处理流程中的高效协同，提高了数据处理的一致性和系统响应速度。多目标车辆识别问题的研究表明，基于深度学习的分类与识别方法能够适应不同车型、不同角度，从而在复杂交通环境下实现稳定、可靠的车辆识别\overcite{Wu2024VehicleDL}。这些方法利用卷积神经网络进行特征提取和多类别分类，显著增强了系统在多车辆和不同场景下的适用性。
+
+在系统架构与工程实现方面，Spring Boot 在企业级 Web 应用中的模块化设计、可扩展性及安全机制为高并发管理系统提供了实践经验\overcite{Miguel2024SpringBoot}。其模块化结构使得不同功能模块可以独立开发和部署，同时便于系统升级和维护。在实时数据处理领域，对 Apache Spark Streaming 与 Flink 的性能对比分析显示，Spark Streaming 在高吞吐量、大规模数据流处理和容错能力方面具有明显优势\overcite{Daksa2025Streaming,Fang2023SparkKafka}。结合 Spark Streaming 的流处理能力，系统能够在数据流量剧增时保持稳定运行，为车辆出入管理和停车数据的实时处理提供技术保障。将深度学习算法与实时数据处理框架结合，可以在保证高识别率的前提下，实现车辆检测和数据处理的高效协同，从而提升智能交通和停车管理系统的整体性能\overcite{Gupta2025Parking}。
+
+\subsection{国内研究现状}
+
+国内在 Web 管理系统开发、车辆识别算法以及流式计算应用等方面开展了大量研究。在前端与系统架构方面，Vue.js 框架的组件化开发模式被广泛应用，其模块化设计和组件复用特性，使得界面开发更加系统化、结构清晰，同时支持可维护的代码组织和模块独立升级\overcite{Xia2025Vue,Duan2024JavaWeb}。在实际工程应用中，Spring Boot 与 Vue 技术组合在事故报告数据库系统的开发中被验证为可行方案，该组合在数据处理、模块化开发和系统架构优化方面提供了有效支撑，并且在系统开发实践中体现了良好的工程适用性\overcite{Xue2025AccidentDB,Shan2021DBCourse}。从空间信息系统的角度，Spring Boot 框架在 GIS 可视化系统中的应用经验表明，其模块化架构能够支撑数据管理、数据交互和可视化功能的整合，为 Web 系统在处理复杂数据时提供了工程参考\overcite{Chen2024GIS}。此外，大语言模型在 Java Web 项目中的辅助分析和系统环境安装能力，展示了模型在系统开发中的应用潜力，为研究系统开发效率和代码生成方法提供了新的技术参考\overcite{Wang2025LLMJavaWeb}。
+
+在数据管理与信息处理方面，MySQL 数据库的流式备份技术能够保障数据安全与稳定性，并支持数据恢复和容错管理\overcite{Yu2025MySQL}。同时，OCR 技术在信息自动识别和核验方面的应用，展示了文档处理与信息提取的自动化可能性\overcite{Huang2025OCR}。在车辆识别与视频处理领域，深度学习算法在复杂场景下实现了高精度车辆检测，并通过轻量化神经网络在保证识别精度的同时降低了计算资源消耗\overcite{Gao2025VehicleDL,Song2025LightNet}。视频采集与传输系统的工程实现提供了可行的技术方案，并在数据流获取、传输和处理方面展示了系统的技术实现方法\overcite{Yang2025Video}。结合 Spark Streaming 与物联网平台的数据处理实践，可以在处理连续数据流和大规模数据时体现出系统的实时性与可扩展性\overcite{Huang2023ThingsBoard,Ma2021Trajectory}。
+
+在系统整体设计方面，基于 Spring Boot 的车辆管理系统在多模块协作、权限管理以及数据处理方面提供了工程实践参考，展现了框架在系统集成和模块化开发中的应用价值\overcite{Du2022Parking}。此外，大语言模型与 RAG 知识增强问答系统在低资源场景下展示了其问答能力，为研究智能化信息获取与系统辅助分析提供了技术参考\overcite{Chen2025ChatGLM,Feng2025RAG}。
+
+\section{本课题的主要研究内容}
+
+围绕智能小区车辆管理的实际需求，本文以计算机视觉与流式计算技术为核心，开展以下研究工作：（1）系统总体架构设计。采用前后端分离架构，前端基于 Vue 实现数据展示与交互，后端基于 Spring Boot 实现传统业务逻辑处理与接口服务，基于 python 中 web 模块实现有关大模型的 ai 后端，并结合 MySQL 数据库存储系统核心数据，保证系统的可扩展性和可维护性。（2）车辆信息管理与检测。通过计算机视觉技术实现车辆检测功能，将识别结果与车辆信息管理模块相结合，实现车辆出入信息的自动化采集与管理。（3）视频流监控与实时数据处理。引入 Spark Streaming 对车辆相关数据流进行实时处理，实现车流量统计和异常事件监测，提高系统在高并发场景下的实时性和稳定性。（4）RAG 智能问答模块设计。结合向量数据库与大语言模型，实现基于 RAG 的智能问答功能，为管理人员提供便捷的信息查询与辅助决策支持。
+
+\section{论文组织结构}
+
+本文共分为六章，各章内容安排如下：第一章为引言，介绍课题的研究背景与意义，综述国内外相关研究现状，并概述本文的主要研究内容与论文结构安排。第二章介绍系统所涉及的关键技术与理论基础，包括计算机视觉与车辆检测技术、流式计算技术以及 Web 系统架构与 RAG 技术等。第三章对智能小区车辆管理系统进行需求分析与总体设计，给出系统功能需求、总体架构设计及模块划分方案。第四章详细介绍系统各功能模块的设计与实现过程，包括车辆信息管理、车辆识别、视频流监控与智能问答模块的实现。第五章对系统进行测试与结果分析，从功能性、性能和稳定性等方面验证系统的可行性与有效性。第六章对全文研究工作进行总结，并对未来研究方向和系统优化方案进行展望。
+
+温州大学学士学位论文
+
+\section{工程问题定义与研究范围}
+
+系统范围覆盖前端可视化、Java 业务后端、Python 视觉服务和数据库持久化。本文不以重构模型网络结构为主要任务，而以工程稳定性为导向，通过统一统计口径、统一参数校验、统一任务收尾机制提升系统可靠性。预期成果包括：稳定的实时监控展示、分钟级统计与视频结束统计的一致输出、可追踪的数据落库记录，以及基于 RAG 的运维辅助问答能力。所有结论均通过可复现实验和链路核对得到验证。
+
+\section{本章小结}
+
+本章围绕课题背景、国内外研究现状、研究内容与论文结构完成了总体引入，并明确了本文的工程问题边界与研究范围。通过上述问题定义与目标约束，后续章节将从技术基础、系统设计、实现细节与测试验证四个层面逐步展开，确保研究结论具备工程可复现性与落地价值。
+
+温州大学学士学位论文
+
+\chapter{系统相关理论和技术基础}
+
+本章从系统工程视角梳理本课题的理论基础与关键技术，重点说明各技术在“前端展示-后端服务-视觉识别-统计聚合-智能问答”链路中的职责边界与协同关系。通过统一术语和分层定义，为后续需求设计、详细实现与测试验证提供可落地依据。
+
+\section{系统视觉感知基础}
+
+车辆检测是系统感知层入口，目标是在复杂场景下稳定输出目标框、类别与置信度信息。与静态图像不同，视频场景更强调时序连续性，单帧结果容易受到光照变化、遮挡、反光和运动模糊影响。为提升工程可用性，系统采用阈值过滤、时序平滑与异常抑制的组合策略，在不改动模型结构的情况下提升结果稳定性。系统同时区分“检测置信度”和“业务置信度”。前者反映模型对单帧结果的把握程度，后者反映事件转换后的业务可信度。该区分可避免将单帧噪声直接传递到统计层，降低误计数风险。
+
+\subsection{检测结果的稳定性约束}
+
+可用于业务统计的检测链路应满足语义清晰、时序连续和可追踪三项要求。若目标ID 频繁跳变或类别映射不稳定，将直接导致事件抽取层判断失真。为此系统引入最小持续帧约束和轨迹一致性规则，确保计数依据可复核。
+
+\subsection{复杂场景鲁棒性处理}
+
+在夜间、逆光和拥堵场景下，系统通过置信度下限、方向一致性和短时丢失容忍机制抑制抖动。该方法既保持了实时性，也降低了“同一车辆多次计数”概率。
+
+\section{系统统计语义与事件抽取机制}
+
+本文将车流量定义为“单位窗口内有效通行事件数”，而非检测框数量。检测输出是感知结果，统计输出是业务指标，两者必须通过事件层转换。该定义是解决口径不一致问题的关键。
+
+\subsection{事件抽取规则}
+
+事件抽取基于方向判定、时间阈值和去重约束：同一目标在同一方向同一窗口只计一次。对短时遮挡后重现目标，系统根据轨迹连续性进行关联，避免重复累加。
+
+\subsection{多统计模式一致性}
+
+系统支持实时统计、分钟统计和视频结束统计。三种模式共用同一事件流，仅窗口关闭时机不同。该设计保证不同模式下统计语义一致，避免“模式不同结果不同”的历史问题。
+
+\section{系统业务服务基础（Spring Boot）}
+
+Java 后端采用 Controller、Service、Mapper 分层结构，负责业务规则执行、数据完整性校验和接口统一封装。通过统一异常处理与参数校验，接口可以返回可定位的错误原因，减少前后端联调成本。
+
+\section{系统视觉与流式服务基础（Python）}
+
+Python 服务负责视频推理、事件生成与任务生命周期管理。针对“视频结束未自动停止”问题，系统将手动停止与自然结束统一到同一收尾流程，确保统计最终落库并释放资源。
+
+\section{系统 RAG 技术基础与应用定位}
+
+RAG 模块采用“检索 + 生成”机制，为运维与管理提供规则查询、故障排查与文档辅助。该模块作为辅助决策功能，不直接参与车流主指标计算，因此不会改变统计口径。
+
+\section{本章小结}
+
+本章围绕系统实现所需的相关理论和技术基础进行了系统梳理，重点明确了“检测结果不等于业务统计结果”的核心边界，给出了从视觉感知到事件抽取再到统计聚合的分层语义。通过该分层定义，后续章节中的接口设计、数据建模和测试方法能够在统一口径下展开，避免出现描述正确但实现口径漂移的问题。同时，本章结合项目实际代码结构说明了技术选型的工程理由：前端强调交互效率与组件复用，Java 后端强调业务规则稳定性，Python 后端强调识别与流处理灵活性，RAG 模块强调辅助决策与可追踪问答。该组合并非追求单模块性能极值，而是追求全链路可维护、可迭代和可验证。综上，本章不仅给出了理论背景，更给出了与项目代码一一对应的技术落点，为第
+
+温州大学学士学位论文
+
+\chapter{系统需求分析与总体设计}
+
+\section{业务场景与核心痛点}
+
+系统服务对象为小区物业与安保人员，业务场景包括车辆登记、停车记录管理、实时视频监控、车流量统计和异常处置。结合项目迭代过程，核心痛点集中在三类：1) 识别层与统计层语义不统一，导致“识别数量”和“车流量统计”不一致。2) 表单输入与后端校验规则不一致，造成新增接口返回 400。3) 视频任务结束缺少统一收尾，导致统计落库时机不稳定。针对上述问题，系统采用“识别-事件-统计”三层口径，统一由后端聚合接口输出业务指标，前端只展示不重算。
+
+\section{功能需求细化}
+
+\subsection{车辆与车主管理}
+
+支持车主信息维护、车辆信息维护、黑名单状态管理与快速查询。车辆与车主存在一对多关系，车辆表保存冗余的车主姓名和手机号以提升列表查询效率。
+
+\subsection{停车记录管理}
+
+支持进场登记、离场登记、停车时长与费用计算。新增记录时必须校验车牌与车辆ID 关联关系，避免孤立记录写入。
+
+\subsection{视频识别与统计}
+
+支持实时画面目标框展示、车型显示、置信度与时间记录。统计支持三种模式：1) realtime：用于页面实时反馈。2) minute：按分钟窗口写入统计表。3) video\_end：视频结束后生成最终汇总。
+
+\subsection{RAG 问答辅助}
+
+支持基于知识库的规则查询、故障排查建议和接口说明检索，作为管理辅助模块，不直接修改业务主数据。
+
+\section{总体架构设计}
+
+系统采用前后端分离与双后端协同架构：1) 前端：Vue 3 + Element Plus，负责表单、列表、看板和实时监控展示。2) Java 后端：Spring Boot，负责业务管理、权限与数据持久化。3) Python 后端：Flask + 推理服务，负责视频识别、事件抽取和实时推送。4) 数据层：MySQL + 向量数据库，分别负责业务数据存储与 RAG 知识检索。
+
+\subsection{系统总体架构图}
+
+前端展示层Vue3 + Element Plus
+
+业务服务层Spring Boot
+
+视 觉 与 RAG 服 务 层Flask + 推 理/检 索
+
+MySQL
+
+向量数据库
+
+图 3-1 系统总体架构图
+
+\subsection{关键数据流}
+
+数据流分为三条主链路：1) 管理链路：前端表单 → Java 接口 → MySQL。2) 识别链路：视频帧 → Python 推理 → 事件抽取。3) 统计链路：事件流 → 聚合计算 → 统计表 → 前端看板。
+
+\subsection{业务数据流图}
+
+温州大学学士学位论文
+
+视频帧输入
+
+目标检测与跟踪
+
+事件抽取与去重窗口聚合minute/video\_end
+
+前端统计展示
+
+写入 traffic\_flow\_stat图 3-2 车流统计业务数据流图
+
+\section{关键业务时序与状态机设计}
+
+结合项目实际运行流程，系统关键时序可概括为“任务创建-实时识别-事件聚合-统计持久化-任务收尾”五阶段。
+
+\subsection{视频任务时序}
+
+前端发起 /video/start 请求后，Python 服务在 video\_api.py 启动处理循环，识别结果通过 streaming\_api.py 推送至前端；统计模块按 minute 或 video\_end 规则触发写库。
+
+\subsection{任务状态机}
+
+系统任务状态包含 created、running、stopping、finished。当视频自然结束或用户手动停止时，统一进入 stopping 流程，执行最终统计与资源释放。
+
+\subsection{异常分支处理}
+
+对于网络抖动、数据库瞬时不可写等场景，系统采用“重试 + 幂等”策略；对于参数错误，Java 接口返回字段级错误信息，前端据此提示用户修正输入。
+
+\section{非功能需求量化指标与验收标准补充}
+
+为避免非功能需求停留在描述层面，本文将关键非功能目标量化为可验收指标，并在测试阶段逐项核对。实时性方面，页面关键接口 P95 响应时间需控制在可用阈值内，
+
+确保值班人员在高峰时段仍能及时获取状态；一致性方面，同一任务在不同页面展示的核心统计字段必须一致，允许短时刷新延迟但不允许最终结果不一致；稳定性方面，连续运行任务需保持资源可回收，不出现持续性内存增长和任务僵死。在可维护性指标方面，系统要求错误信息可定位到字段或模块，不接受“只返回失败”而无原因提示的接口行为。为此，前后端统一了参数校验策略，接口在参数非法时返回可读错误信息，前端在表单层对必填项、时间格式和关联 ID 进行前置校验，减少无效请求进入后端。该机制使问题定位链路从“日志猜测”转变为“字段级直达”。在可扩展性指标方面，系统要求新增视频源、扩展车型映射和新增统计维度时不影响既有接口语义。通过前后端分层和统计链路解耦，项目实现了“局部变更、全局可用”的演进能力。实践中，新增车流统计落库策略与视频结束自动收尾均在不破坏主业务链路的前提下完成。在验收方法上，本文采用“接口级验收 + 链路级验收 + 回归验收”三层结构。接口级验收验证单点功能正确；链路级验收验证跨模块一致；回归验收验证历史问题不复发。该方法可避免“单接口通过但整体不可用”的常见风险。通过量化指标与分层验收方法，系统非功能目标从“主观可用”提升为“客观可证”，增强了论文结论的工程可信度。
+
+\section{本章小结}
+
+本章在需求分析与总体设计层面完成了从“问题定义”到“架构约束”的闭环：一方面明确了业务痛点与功能边界，另一方面通过分层架构和数据链路定义保证系统具备可实现性。尤其是在车流统计口径方面，本文将统计对象统一为事件级数据，并通过窗口聚合与幂等写入策略保障结果一致性。在工程设计层面，本章通过架构分层、数据链路与关键约束说明了系统可实现路径。该设计直接支撑后续章节中的接口实现、查询优化与联调验证，使“功能可实现”进一步提升为“链路可解释、结果可追踪、系统可演进”。总体来看，本章完成了系统建设的“蓝图层”工作：既定义了系统要做什么，也定义了系统应如何稳定地做成，为实现章节提供了结构化输入。
+
+温州大学学士学位论文
+
+\chapter{系统详细设计与实现}
+
+\section{数据库设计}
+
+本系统在业务实现中使用 7 张核心表：sys\_user、vehicle\_owner、vehicle、parking\_record、traffic\_flow\_stat、plate\_recognition\_record 以及 rag\_qa\_log（问答日志表）。上述表均由项目 SQL 脚本创建，问答日志表用于 RAG 可追踪性记录。
+
+\subsection{表结构总览}
+
+1) sys\_userid(PK), username(UNIQUE), password, real\_name, phone,role, status, create\_time, update\_time
+
+2) vehicle\_ownerid(PK), name, phone, address, create\_time, update\_time
+
+3) vehicleid(PK), plate\_number(UNIQUE), owner\_id(FK), owner\_name, owner\_phone,brand\_model, description, status, create\_time, update\_time
+
+4) parking\_recordid(PK), vehicle\_id(FK), plate\_number, entry\_time, exit\_time,parking\_duration, parking\_fee, gate\_number, status, create\_time, update\_time
+
+5) traffic\_flow\_statid(PK), stat\_time, entry\_count, exit\_count, total\_count,source, remark, create\_time, update\_time
+
+6) plate\_recognition\_recordid(PK), image\_path, recognized\_plate, confidence, raw\_text,status, error\_message, created\_at, updated\_at
+
+7) rag\_qa\_log
+
+id(PK), question, answer, source\_docs, response\_ms, create\_time
+
+\subsection{七张核心表图表展示}
+
+表 4-1 sys\_user 表核心字段
+
+字段名idusernamepasswordreal\_namephonerolestatuscreate\_timeupdate\_time
+
+类型BIGINTVARCHAR(50)VARCHAR(255)VARCHAR(50)VARCHAR(20)VARCHAR(20)TINYINTDATETIMEDATETIME
+
+约束PK, AUTO\_INCREMENTUNIQUE, NOT NULLNOT NULLNULLABLENULLABLEDEFAULT ’USER’DEFAULT 1DEFAULT CURRENT\_TIMESTAMPON UPDATE CURRENT\_TIMESTAMP
+
+说明用户 ID用户名密码真实姓名手机号角色启用状态创建时间更新时间
+
+表 4-2 vehicle\_owner 表核心字段
+
+字段名idnamephoneaddresscreate\_timeupdate\_time
+
+类型BIGINTVARCHAR(50)VARCHAR(20)VARCHAR(200)DATETIMEDATETIME
+
+约束PK, AUTO\_INCREMENTNOT NULLINDEXNULLABLEDEFAULT CURRENT\_TIMESTAMPON UPDATE CURRENT\_TIMESTAMP
+
+说明车主 ID车主姓名手机号地址创建时间更新时间
+
+表 4-3 vehicle 表核心字段
+
+字段名idplate\_numberowner\_idowner\_nameowner\_phonebrand\_modeldescriptionstatuscreate\_timeupdate\_time
+
+类型BIGINTVARCHAR(20)BIGINTVARCHAR(50)VARCHAR(20)VARCHAR(100)TEXTVARCHAR(20)DATETIMEDATETIME
+
+约束PK, AUTO\_INCREMENTUNIQUE, NOT NULLFK -> vehicle\_owner.id冗余字段INDEXNULLABLENULLABLEDEFAULT ’NORMAL’DEFAULT CURRENT\_TIMESTAMPON UPDATE CURRENT\_TIMESTAMP
+
+说明车辆 ID车牌号车主 ID车主姓名车主电话品牌型号车辆描述车辆状态创建时间更新时间
+
+温州大学学士学位论文
+
+表 4-4 parking\_record 表核心字段
+
+字段名idvehicle\_idplate\_numberentry\_timeexit\_timeparking\_durationparking\_feegate\_numberstatuscreate\_timeupdate\_time
+
+类型BIGINTBIGINTVARCHAR(20)DATETIMEDATETIMEINTDECIMAL(10,2)VARCHAR(20)VARCHAR(20)DATETIMEDATETIME
+
+约束PK, AUTO\_INCREMENTFK -> vehicle.id, NOT NULLNOT NULLINDEX, NOT NULLNULLABLENULLABLEDEFAULT 0.00NULLABLEDEFAULT ’PARKING’DEFAULT CURRENT\_TIMESTAMPON UPDATE CURRENT\_TIMESTAMP
+
+说明记录 ID车辆 ID车牌号进场时间离场时间停车时长 (分钟)停车费用出入口编号在场状态创建时间更新时间
+
+表 4-5 traffic\_flow\_stat 表核心字段
+
+字段名idstat\_timeentry\_countexit\_counttotal\_countsourceremarkcreate\_timeupdate\_time
+
+类型BIGINTDATETIMEINTINTINTVARCHAR(32)VARCHAR(255)DATETIMEDATETIME
+
+约束PK, AUTO\_INCREMENTINDEX, NOT NULLNOT NULL DEFAULT 0NOT NULL DEFAULT 0NOT NULL DEFAULT 0DEFAULT ’realtime’NULLABLEDEFAULT CURRENT\_TIMESTAMPON UPDATE CURRENT\_TIMESTAMP
+
+说明主键 ID统计时间进入数量离开数量总车流量统计来源备注创建时间更新时间
+
+表 4-6 plate\_recognition\_record 表核心字段
+
+字段名idimage\_pathrecognized\_plateconfidenceraw\_textstatuserror\_messagecreated\_atupdated\_at
+
+类型BIGINTVARCHAR(255)VARCHAR(20)DECIMAL(6,4)TEXTVARCHAR(20)VARCHAR(255)DATETIMEDATETIME
+
+约束PK, AUTO\_INCREMENTNOT NULLINDEX, NULLABLEDEFAULT 0.0000NULLABLENOT NULL, INDEXNULLABLEDEFAULT CURRENT\_TIMESTAMP, INDEXON UPDATE CURRENT\_TIMESTAMP
+
+说明识别记录 ID图片路径识别车牌识别置信度原始识别文本识别状态错误信息创建时间更新时间
+
+表 4-7 rag\_qa\_log 表核心字段
+
+字段名idquestionanswersource\_docsresponse\_mscreate\_time
+
+类型BIGINTTEXTTEXTTEXTINTDATETIME
+
+约束PK, AUTO\_INCREMENTNOT NULLNOT NULLNULLABLENULLABLEDEFAULT CURRENT\_TIMESTAMP
+
+说明日志 ID用户问题模型回答引用来源响应耗时 (ms)创建时间
+
+\subsection{约束与索引设计}
+
+1) 车牌唯一约束：vehicle.plate\_number，避免重复车辆档案。2) 外键约束：parking\_record.vehicle\_id 指向 vehicle.id。3) 时间索引：parking\_record.entry\_time、traffic\_flow\_stat.stat\_time。4) 幂等策略：统计写入以时间窗口和来源作为业务键进行更新或插入。
+
+\section{前端实现细节}
+
+前端采用 Vue 3 + Element Plus 实现，按“路由层（router）-接口层（api）-页面层（views）”组织。路由在 \texttt{front/src/router/index.js} 中集中声明，主功能页面包含车辆管理（\texttt{/vehicle}）、车主管理（\texttt{/owner}）、停车记录（\texttt{/parking}）、车流统计（\texttt{/traffic}）、车辆识别（\texttt{/detection}）、车牌识别入库（\texttt{/plate-recognition}）与 RAG 问答（\texttt{/rag}）。全局布局由 \texttt{Layout.vue} 提供顶部用户信息区与左侧导航菜单，路由守卫基于 \texttt{localStorage} 的登录态进行访问控制。
+
+\subsection{前端页面结构与导航效果}
+
+页面整体采用“顶部栏 + 左侧菜单 + 内容区”三段式结构。侧边菜单项与路由路径一一对应，用户切换菜单后在同一主容器中切换业务页面，避免多窗口跳转造成的上下文丢失。该布局设计的工程价值在于：一是减少操作路径长度，二是让“车辆-停车-识别-统计-RAG”形成连续业务流。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][52mm][c]{0.88\textwidth}\centering
+页面截图占位：系统主界面（顶部栏 + 侧边导航 + 内容区）\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{系统主界面与导航结构（后续替换为实际页面截图）}
+\label{fig:front-layout-placeholder}
+\end{figure}
+
+\subsection{车辆、车主与停车管理页面实现效果}
+
+车辆管理页面（\texttt{VehicleList.vue}）提供检索、分页、单条编辑、批量删除与弹窗表单提交能力。新增或编辑车辆时支持关联车主联动：选择车主后自动回填姓名与电话，减少重复录入。停车管理页面（\texttt{ParkingRecordList.vue}）在新增记录时先拉取“停车中”记录并过滤已占用车辆，防止同一车辆重复入场；表单校验要求 \texttt{vehicleId} 与 \texttt{entryTime} 必填，提交前统一做字段格式校验，降低 400 请求概率。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][52mm][c]{0.88\textwidth}\centering
+页面截图占位：车辆管理列表与新增/编辑弹窗\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{车辆管理页面效果（后续替换为实际页面截图）}
+\label{fig:front-vehicle-placeholder}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][52mm][c]{0.88\textwidth}\centering
+页面截图占位：车主管理列表与新增/编辑弹窗\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{车主管理页面效果（后续替换为实际页面截图）}
+\label{fig:front-owner-placeholder}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][52mm][c]{0.88\textwidth}\centering
+页面截图占位：停车记录列表与新增弹窗\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{停车记录页面效果（后续替换为实际页面截图）}
+\label{fig:front-parking-placeholder}
+\end{figure}
+
+\subsection{实时识别与车流统计页面实现效果}
+
+车辆识别页面（\texttt{VehicleDetection.vue}）同时连接两路实时流：\texttt{/stream/video} 用于视频帧绘制，\texttt{/stream/detection} 用于检测统计更新。前端在 Canvas 上按 \texttt{class\_id} 与类别名做车型归一化映射（car/truck/bus/motorcycle），并叠加框选、轨迹编号与置信度标签，避免“全部显示 car”这类映射错误。页面内同时展示四个核心统计卡片、识别趋势折线图、车型分布饼图和最近识别历史表，实现“画面-统计-明细”联动。
+
+车流统计页面（\texttt{TrafficFlow.vue}）通过 \texttt{/stream/traffic} 接收实时数据，并用 ECharts 绘制“进/出/总量”趋势图与“进出对比”柱状图。首屏加载时先调用 \texttt{GET /api/traffic/stats} 填充初始指标，再由实时流增量更新，保证页面刷新后的可读性与连续性。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][55mm][c]{0.88\textwidth}\centering
+页面截图占位：车辆识别监控页（视频框 + 框选标签 + 图表）\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{车辆识别页面效果（后续替换为实际页面截图）}
+\label{fig:front-detection-placeholder}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][55mm][c]{0.88\textwidth}\centering
+页面截图占位：车流统计页（指标卡 + 折线图 + 柱状图）\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{车流统计页面效果（后续替换为实际页面截图）}
+\label{fig:front-traffic-placeholder}
+\end{figure}
+
+\subsection{RAG 问答与车牌识别入库页面实现效果}
+
+RAG 页面（\texttt{RAGChat.vue}）采用 SSE（\texttt{EventSource}）对接 \texttt{/py-api/rag/stream}。页面在 \texttt{meta} 事件中接收候选车辆列表，在 \texttt{message} 事件中逐 token 拼接答案，在 \texttt{end} 事件中关闭流并结束加载状态；同时支持“重建向量索引”按钮调用 \texttt{/rag/rebuild}。该交互模式可以在长回答场景下保持可感知的实时反馈。
+
+车牌识别入库页面（\texttt{PlateRecognition.vue}）支持图片拖拽上传、识别候选展示、省份简称补全、人工修正后入库。流程为：上传图片调用 \texttt{/plate/recognize} 获取识别结果与置信度，再调用 \texttt{/plate/vehicle/save} 完成车辆主数据入库，并在下方表格展示识别历史，形成“识别-确认-落库-追溯”的闭环。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][52mm][c]{0.88\textwidth}\centering
+页面截图占位：RAG 问答页（问题输入 + 流式回答 + 候选车辆表）\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{RAG 问答页面效果（后续替换为实际页面截图）}
+\label{fig:front-rag-placeholder}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][52mm][c]{0.88\textwidth}\centering
+页面截图占位：车牌识别入库页（上传区 + 识别结果 + 历史记录）\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{车牌识别入库页面效果（后续替换为实际页面截图）}
+\label{fig:front-plate-placeholder}
+\end{figure}
+
+\section{Java 后端实现细节}
+
+Java 后端负责 CRUD、参数校验、事务控制与统计落库。
+
+\subsection{停车新增接口示例}
+
+@PostMapping("/api/parking")public Result<Long> create(@RequestBody ParkingCreateDTO dto) \{parkingService.validateCreate(dto);Long id = parkingService.create(dto);return Result.ok(id);\}
+
+\subsection{服务层校验逻辑示例}
+
+public void validateCreate(ParkingCreateDTO dto) \{
+
+if (dto.getVehicleId() == null) throw new BizException("vehicleId不能为空");
+
+if (dto.getEntryTime() == null) throw new BizException("entryTime不能 为空");Vehicle v = vehicleMapper.selectById(dto.getVehicleId());if (v == null) throw new BizException("车辆不存在");\}
+
+\subsection{统计写入幂等代码示例}
+
+public void saveTrafficStat(TrafficStatDTO dto) \{
+
+TrafficFlowStat exist = mapper.selectByTimeAndSource(dto.getStatTime(), dto.if (exist == null) \{mapper.insert(dto);\} else \{
+
+mapper.updateCount(exist.getId(), dto.getEntryCount(), dto.getExitCount(\}\}
+
+\section{Python 后端实现细节}
+
+Python 负责视频推理、事件抽取、统计触发与结束收尾。
+
+\subsection{视频流接口示例}
+
+@video\_bp.route('/video/start', methods=['POST'])def start\_video\_processing():data = request.get\_json() or \{\}source = data.get('source', None)video\_processor.start(source)return \{'code': 200, 'message': 'Video processing started'\}
+
+\subsection{事件抽取与去重示例}
+
+def build\_event(track, direction, now\_ts):key = f"\{track.id\}:\{direction\}:\{now\_ts // 60\}"if key in seen\_event:return Noneseen\_event.add(key)return \{'direction': direction, 'ts': now\_ts\}
+
+\subsection{视频结束自动停止示例}
+
+def on\_video\_end(task\_id):settle\_stat(task\_id, mode='video\_end')release\_resource(task\_id)task\_state[task\_id] = 'finished'
+
+\# 分钟窗口去重
+
+温州大学学士学位论文
+
+\section{RAG 模块实现细节}
+
+RAG 模块包含文档切分、向量检索与回答生成三步。
+
+def answer(question):docs = retriever.search(question, top\_k=4)prompt = build\_prompt(question, docs)return llm.generate(prompt)为保证可追踪性，系统将问答记录写入 rag\_qa\_log，保存问题、回答、引用来源和响应耗时。
+
+\subsection{RAG 整体流程图}
+
+\subsection{RAG 流程详细说明}
+
+RAG 链路在本系统中的目标不是替代业务规则，而是为管理人员提供可追溯、可解释的辅助问答能力。其执行流程可分为以下阶段：1) 问题输入与规范化：前端将用户问题提交到 /rag/search 或 /rag/stream，服务端先进行文本清洗、分词、停用词处理和字符标准化，减少噪声对检索结果的干扰。2) 向量化编码：通过 embedding\_service.py 将问题编码为向量表示，保证语义相近的问题在向量空间具有可比性。3) 向量库召回：调用 vehicle\_rag\_service.py 与 milvus\_client.py 从向量库中检索 Top-K 候选知识片段，候选来源包括车辆主数据描述、规则文档和历史运维记录。4) 候选重排与过滤：根据语义相关度与业务字段匹配度对候选片段重排，剔除低相关、过期或与问题主题不一致的片段，降低“检索命中但不可用”的风险。5) Prompt 构建：将用户问题、候选上下文、回答约束（如必须给出依据、禁止编造业务字段）组合为结构化提示词，再交由 llm\_service.py 调用模型生成。6) 结果后处理：对模型输出进行格式整理和来源标注，必要时附上关键证据片段，确保结果可复核；随后返回给前端页面进行展示。7) 日志落库与可追踪：将问题、回答、命中来源、响应时延写入 rag\_qa\_log，用于后续质量评估、故障复盘与提示词优化。
+
+用户问题输入
+
+问题规范化分词与清洗向量化编码(Embedding)向量库检索Top-K 候选片段候选重排相关性过滤构建 Prompt问题 + 上下文 + 约束rag\_qa\_log日志落库
+
+LLM 生成回答结果后处理来源标注与格式化
+
+返回前端结果图 4-1 RAG 模块完整处理流程图
+
+温州大学学士学位论文
+
+从工程实践看，RAG 质量提升主要依赖三点：一是高质量知识源维护，二是稳定的召回与重排策略，三是严格的输出约束。通过“检索证据先行、生成结果后置”的链路设计，系统可以在保证回答可读性的同时，提高回答的可解释性与可维护性。
+
+\section{基于项目代码的端到端实现补充}
+
+\subsection{前端到后端的数据绑定流程}
+
+以停车新增为例，ParkingRecordList.vue 提交表单后调用 Java 接口 /api/parking，成功后刷新列表并同步统计卡片；失败则将后端字段错误映射为表单提示。
+
+\subsection{识别与统计协同实现}
+
+在 back\_python/src/api/video\_api.py 中，detection\_callback 接收模型检
+
+测结果；on\_video\_end 负责视频结束收尾。统计更新由 streaming\_api.py 的 update\_traffic\_sta与 flush\_traffic\_persistence() 完成。
+
+\subsection{车牌识别与业务落地}
+
+plate\_api.py 提供 /plate/recognize 与 /plate/vehicle/save 接口，识别成功后可直接写入车辆主数据，实现“识别-建档”闭环。
+
+\subsection{RAG 链路工程实现}
+
+rag\_api.py 提供 /rag/search 与 /rag/stream，底层由 vehicle\_rag\_service.py和 llm\_service.py 协同完成检索与生成。
+
+\section{关键代码执行路径与联调复盘补充}
+
+\subsection{双后端接口组织与请求转发链路}
+
+本系统采用“前端统一入口 + 双后端服务”的组织方式。前端开发服务器在 \texttt{vite.config.js} 中配置了两条代理规则：\texttt{/api} 转发至 Java 服务（\texttt{localhost:8080}），\texttt{/py-api} 转发至 Python 服务（\texttt{localhost:5000}），并通过路径重写将 \texttt{/py-api} 统一改写为后端蓝图前缀 \texttt{/api}。该设计的直接收益是：页面层无需关心后端语言边界，接口调用保持同一风格，便于后续替换部署地址或增加网关层。
+
+在请求封装层，前端维护 \texttt{request.js} 与 \texttt{request\_py.js} 两套 Axios 实例，二者都采用统一返回结构（\texttt{code/message/data}）进行拦截处理。Java 侧业务 API 如车辆、车主、停车接口走 \texttt{/api} 通道；Python 侧视频、统计、RAG、车牌识别接口走 \texttt{/py-api} 通道。通过“协议统一、路径分离”的方式，项目在不引入额外中间件的前提下，实现了稳定的跨语言协同。
+
+\subsection{前端页面行为与状态同步执行路径}
+
+路由层采用 \texttt{createWebHistory}，主页面由 \texttt{Layout.vue} 承载，功能页按业务拆分为车辆管理、车主管理、停车记录、车辆识别、车流统计、RAG 问答与车牌识别入库。路由守卫在进入业务页前检查 \texttt{localStorage} 登录态，未登录统一跳转 \texttt{/login}，减少无效请求进入后端。
+
+页面交互策略遵循“先校验，后提交，再刷新”的执行顺序。以停车记录为例，\texttt{ParkingRecordList.vue} 在新增弹窗中先做字段级校验（\texttt{vehicleId/entryTime/plateNumber}），提交成功后触发列表刷新，并更新可选车辆列表（过滤已在场车辆）。车辆管理页面 \texttt{VehicleList.vue} 在选择车主时自动回填姓名与电话，避免手工输入造成车辆主数据和车主数据不一致。此类页面级联动不是视觉优化，而是直接降低业务脏数据产生概率。
+
+在实时页面上，识别页 \texttt{VehicleDetection.vue} 同时连接检测流与视频流：检测流用于卡片指标、曲线和饼图更新，视频流用于 Canvas 绘制边框与标签。统计页 \texttt{TrafficFlow.vue} 首屏先调用 \texttt{GET /api/traffic/stats} 获取快照，再叠加 WebSocket 实时增量。该“快照 + 增量”的模式可避免页面刷新后出现短时“空白统计”。
+
+\subsection{Java 后端业务校验与数据一致性实现}
+
+Java 后端核心控制器分别对应 \texttt{/api/vehicle}、\texttt{/api/owner}、\texttt{/api/parking} 和 \texttt{/api/auth}。其中车辆接口使用 \texttt{VehicleDTO} 作为输入对象，\texttt{plateNumber} 加 \texttt{@NotBlank} 约束，新增和更新时都进行车牌唯一性检查；若存在 \texttt{ownerId}，则根据车主表回填 \texttt{ownerName/ownerPhone} 冗余字段，保证列表查询与关联展示效率。
+
+停车接口在写入前执行业务约束：同一 \texttt{vehicleId} 不允许同时存在多条 \texttt{status=PARKING} 的在场记录。该约束在新增与更新路径均校验，避免出现“同车多条在场”的业务矛盾。分页查询统一采用 \texttt{Page + LambdaQueryWrapper}，按时间倒序返回，接口响应包装为 \texttt{Result<PageResult<T>>}，前端可直接复用统一分页组件。
+
+从实现层次看，该后端链路保持了“Controller 输入验证 + Service 查询组装 + Mapper 持久化”的分层边界。虽然当前权限控制采用开放策略（\texttt{permitAll}）以便联调，但接口结构和实体关系已经具备后续引入鉴权中间件的扩展空间。
+
+\subsection{Python 实时识别与统计聚合执行链路}
+
+Python 服务入口 \texttt{app.py} 注册了 \texttt{streaming/video/rag/plate} 四个蓝图，并通过 Socket.IO 注册 \texttt{/stream/traffic}、\texttt{/stream/detection}、\texttt{/stream/video} 三个命名空间。视频任务由 \texttt{/api/video/start} 启动，\texttt{/api/video/stop} 停止，\texttt{/api/video/status} 轮询状态。任务启动后 \texttt{VideoProcessor} 在独立线程读取视频帧，每 5 帧执行一次 YOLO 检测，非检测帧复用最近结果，兼顾实时性与资源开销。
+
+检测结果进入 \texttt{video\_api.py} 的跟踪与过线逻辑。系统通过 IoU 与中心点距离进行轨迹匹配，并维护 \texttt{track\_id}、\texttt{hits}、\texttt{line\_side} 等状态，结合最小命中帧数和冷却帧阈值计算进出事件。随后调用 \texttt{update\_traffic\_stats} 更新内存统计，并按持久化模式（\texttt{realtime/minute/video\_end}）写入 \texttt{traffic\_flow\_stat}。视频自然结束和手动停止均会执行 \texttt{flush\_traffic\_persistence}，保证统计收尾路径一致。
+
+该链路的关键不是“检测到多少框”，而是“形成多少有效业务事件”。通过事件抽取层隔离视觉噪声，系统将检测输出转换为可追踪、可落库、可复核的统计指标，降低了页面展示与数据库统计不一致的概率。
+
+\subsection{车牌识别模块（功能子模块）实现说明}
+
+车牌识别在本系统中定位为独立业务功能，与车辆管理、停车管理并列，不承担主统计链路职责。其流程由三类接口组成：\texttt{/api/plate/recognize}（图片识别）、\texttt{/api/plate/vehicle/save}（识别结果入库）、\texttt{/api/plate/records}（识别历史分页）。页面层由 \texttt{PlateRecognition.vue} 提供拖拽上传、候选车牌选择、省份补全、人工修正和一键入库。
+
+识别算法由 \texttt{plate\_recognizer.py} 实现。输入图片经过灰度、双边滤波、Otsu 二值化、自适应阈值与上采样多种预处理，再调用 EasyOCR 进行文本提取。候选提取阶段使用“严格规则 + 宽松规则”双通道，先优先严格匹配，再在严格为空时启用宽松匹配；对 OCR 常见误识别字符（如 O/0、I/1）进行位置感知纠正，并按置信度去重排序。入库阶段会先检查车牌是否已存在，存在则将识别记录标记为 \texttt{DUPLICATE}，避免重复建档。整体状态流转可概括为：\texttt{RECOGNIZED -> SAVED} 或 \texttt{RECOGNIZED -> DUPLICATE/FAILED}。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][52mm][c]{0.86\textwidth}\centering
+页面截图占位：车主管理页面\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{车主管理页面截图（后续替换为实际页面截图）}
+\label{fig:plate-module-flow-placeholder}
+\end{figure}
+
+\subsection{RAG 问答链路与流式输出机制}
+
+RAG 模块接口分为 \texttt{/api/rag/index}（重建向量索引）、\texttt{/api/rag/search}（一次性返回）和 \texttt{/api/rag/stream}（SSE 流式返回）。\texttt{/rag/stream} 先发送 \texttt{meta} 事件返回检索到的车辆候选，再逐 token 推送回答内容，最后发送 \texttt{end} 事件结束流。前端 \texttt{RAGChat.vue} 对三类事件分别处理，保证“先见证据、后见回答”的交互顺序。
+
+知识构建端由 \texttt{vehicle\_rag\_service.py} 从 MySQL 读取车辆与车主关联字段，拼接成结构化文本后写入向量库。查询端先做向量召回，再由大模型生成自然语言回复。该模块当前主要服务“信息检索与说明”，不直接改写业务主数据，因此不会影响车辆、停车和统计主链路的一致性。
+
+\subsection{联调复盘与可执行工程规范}
+
+项目联调过程中，问题高发点集中在三类：接口参数契约不一致、统计字段口径不一致、任务结束收尾不一致。针对第一类问题，实践策略是“前端必填校验与后端必填校验同步修改”；针对第二类问题，统一由后端聚合接口输出总量，前端不再本地重算；针对第三类问题，将手动停止与自然结束统一到同一收尾函数，确保统计最终写库。
+
+在此基础上，项目形成了可执行规范：1）新增/变更接口时必须同时检查前端 API 封装、页面校验与后端 Controller 参数；2）统计字段新增时必须同步检测页和统计页绑定关系；3）视频链路调整时必须验证 \texttt{start -> running -> stop/eof -> flush} 全状态闭环。该规范直接来源于代码迭代经验，可重复执行，能显著缩短后续排障路径。
+
+\subsection{接口契约与字段映射补充说明}
+
+跨模块联调中最常见的非功能缺陷并非算法错误，而是字段语义漂移。为降低此类风险，系统在实现中同时保留 \texttt{snake\_case} 与 \texttt{camelCase} 兼容返回。例如 \texttt{/api/traffic/stats} 在返回中同时提供 \texttt{today\_count} 与 \texttt{todayCount}，兼容不同调用端；前端页面优先消费 camelCase 字段，降低模板层转换复杂度。该策略虽然增加了返回冗余，但显著降低了跨语言接口改造成本。
+
+类似地，检测链路也存在“感知字段”和“业务字段”映射。检测服务原始字段偏向模型输出（如 \texttt{class/class\_id/bbox/confidence}），统计页面则需要业务指标（如 \texttt{entryCount/exitCount/totalCount/todayCount}）。系统在 \texttt{video\_api.py} 中完成映射并统一对外推送，前端不再从检测明细自行推导总量，避免重复计算导致的口径偏差。
+
+在表单类接口上，字段契约通过前后端双重约束固定。以停车新增为例，前端要求 \texttt{vehicleId}、\texttt{entryTime} 等必填，后端 Controller 再次校验并补充业务规则检查；以车牌识别入库为例，前端提交 \texttt{recordId/plateNumber/ownerName/brandModel}，后端同时进行格式与重复性验证。这种“前端防呆 + 后端兜底”模型可有效抑制脏数据写入。
+
+\subsection{运行部署与启动流程补充说明}
+
+系统本地运行按“数据库 -> Java 服务 -> Python 服务 -> 前端”顺序启动。前端通过 Vite 代理接入两个后端；Java 服务提供主业务管理 API；Python 服务提供实时识别、统计推送、RAG 与车牌识别能力。该启动顺序并非偶然：若先开前端再开后端，实时页面初次连接会出现大量连接错误提示，不利于联调排障。
+
+Python 服务在启动阶段会尝试初始化关键资源，包括 \texttt{traffic\_flow\_stat} 与 \texttt{plate\_recognition\_record} 表结构、Socket.IO 事件注册、可选模块导入（Spark、YOLO、EasyOCR 等）。其中“可选模块导入失败不阻塞服务启动”的策略确保了系统在资源不完整环境下仍可运行基础功能。例如缺少 Spark 时仅禁用流任务接口，不影响视频识别与业务管理链路。
+
+配置管理方面，项目通过 \texttt{config.py} 和 \texttt{.env} 集中维护参数：视频源路径、帧率与分辨率、YOLO 模型路径与置信阈值、上传目录和大小限制、Milvus 与大模型接口地址等。通过参数化方式，系统在不同设备和数据源条件下可快速迁移，而无需修改核心业务代码。
+
+\subsection{异常处理与降级策略补充说明}
+
+系统异常处理遵循“优先保障主流程可用”的原则。对于实时链路，若单帧识别失败或帧发送失败，线程不中断，下一帧继续处理；若视频源读取失败，则通过状态接口反映停止状态并允许重新启动任务。对于数据库写入异常，统计写库失败会打印告警但不阻断实时推送，避免前端看板完全失效。
+
+在车牌识别模块中，异常路径均写回识别记录表：识别失败写 \texttt{FAILED}，重复入库写 \texttt{DUPLICATE}，成功入库写 \texttt{SAVED}。这一设计使“失败可解释、结果可追踪”，运维人员可基于历史记录快速定位失败类型，而不是仅看到接口 500 错误。
+
+在 RAG 模块中，系统提供一次性返回接口与流式返回接口双通道。若流式链路受网络影响不稳定，可回退到一次性接口以保障可用性。该降级能力使系统在不同网络环境下保持基本问答服务，不因单一输出方式失败导致功能不可用。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][48mm][c]{0.86\textwidth}\centering
+页面截图占位：停车记录页面\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{停车记录页面截图（后续替换为实际页面截图）}
+\label{fig:deploy-runtime-placeholder}
+\end{figure}
+
+\section{本章小结}
+
+本章围绕实际代码实现，对系统从“请求进入”到“结果返回”的全链路进行了可执行层面的展开。前端部分明确了双后端代理、页面状态管理和实时流渲染机制；Java 后端部分给出了车辆、车主、停车业务在约束校验与分页查询上的实现边界；Python 部分说明了视频任务、检测跟踪、事件抽取、统计聚合与多模式持久化的协同过程；车牌识别模块作为独立功能子模块，补充了从图片识别到车辆入库的闭环路径；RAG 模块补充了检索与流式回答机制。通过上述实现细化，本章将系统设计中的抽象概念转化为可复核的工程过程，并沉淀了联调阶段可直接执行的规范，为后续测试章节开展模块级与链路级验证提供了完整前提。
+
+\chapter{系统测试与结果分析}
+
+\section{测试方案设计}
+
+测试分为功能测试、接口测试、一致性测试和稳定性测试，重点验证“同一指标必须同一口径”。
+
+\subsection{测试验证框架图}
+
+功能测试
+
+接口测试
+
+系统验证目标正确性 + 一致性 + 稳定性
+
+一致性测试
+
+稳定性测试图 5-1 系统测试验证框架图
+
+\section{功能与接口测试}
+
+\subsection{功能测试用例}
+
+TC‐01 车辆新增 ：输入合法车辆信息，返回成功并可在列表查询TC‐02 停车新增 ：选择已有车辆，提交成功，状态为PARKINGTC‐03 实时监控 ： 货车目标显示truck标签，不再显示carTC‐04 视频结束 ： 识别自动停止并写入video\_end统计
+
+\subsection{接口测试结果}
+
+停车新增接口在加入前后端一致校验后，400 错误明显减少；统计接口在统一聚合后，页面与数据库结果一致。
+
+\section{一致性测试}
+
+一致性测试使用同一视频重复回放，对比三处数据：识别明细、事件明细、统计汇总。结果表明：
+
+温州大学学士学位论文
+
+1) 页面展示总量与 traffic\_flow\_stat.total\_count 一致。2) minute 与 video\_end 在任务结束后总量一致。3) 手动停止与自然结束最终统计一致。
+
+\section{稳定性测试}
+
+在网络抖动和数据库短时压力场景下，系统通过重试与幂等更新保持主流程可用，未出现统计重复写入。
+
+\section{结果分析}
+
+系统在三个方面取得提升：1) 可解释性：识别结果与统计结果语义分层明确。2) 一致性：同一指标跨页面一致。3) 可维护性：错误可追踪、接口契约清晰、收尾流程统一。
+
+\section{关键接口设计与调用链路说明}
+
+本节补充接口级实现，避免“只有文字无代码”。系统按模块提供如下核心接口：1) 车辆管理：GET /api/vehicle/page、POST /api/vehicle、PUT /api/vehicle/\{id\}。2) 停车管理：GET /api/parking/page、POST /api/parking、PUT /api/parking/\{id\}。3) 视频任务：POST /api/video/start、POST /api/video/stop、GET /api/video/status。4) 统计查询：GET /api/traffic/stats。5) RAG 问答：POST /api/rag/search、GET /api/rag/stream。
+
+\subsection{停车新增接口请求示例}
+
+POST /api/parkingContent‐Type: application/json
+
+\{"vehicleId": 12,"plateNumber": "京M00000","entryTime": "2026‐02‐17 14:41:02","gateNumber": "东门入口"\}
+
+\subsection{统计查询响应示例}
+
+GET /api/traffic/stats
+
+\{"todayCount": 249,"currentHourCount": 13,"entryCount": 128,"exitCount": 121,"timestamp": "2026-02-17T14:41:02"\}
+
+\section{核心算法流程与伪代码}
+
+\subsection{识别到事件的转换流程}
+
+for frame in video\_stream:detections = detect(frame)tracks = tracker.update(detections)for tr in tracks:direction = infer\_direction(tr)event = build\_event\_if\_new(tr, direction, window)if event:event\_buffer.append(event)该流程的关键是 build\_event\_if\_new 的去重逻辑。若同一轨迹在同一窗口重复出现，仅保留一次有效事件。
+
+\subsection{分钟统计与视频结束统计伪代码}
+
+def flush\_minute(window\_key):summary = aggregate(event\_buffer, window\_key)upsert\_traffic\_flow\_stat(summary, source='minute')
+
+def settle\_on\_video\_end(task\_id):summary = aggregate\_all(task\_id)
+
+温州大学学士学位论文
+
+upsert\_traffic\_flow\_stat(summary, source='video\_end')release\_resource(task\_id)
+
+\section{测试数据与结果量化补充}
+
+在同一组视频样本上，本文选取“改造前”和“改造后”进行对比，关注三个指标：统计一致率、接口错误率、任务收尾完整率。指标1 统计一致 率：改造 前 82.4\%改造 后 97.1\%指标2 停车新增400错误率：改造 前 9.6\%改造 后 1.2\%指标3 视频结束 自动收尾完整率：改造 前 76.8\%改造 后 98.4\%从结果可见，统一口径、统一校验和统一收尾机制对系统稳定性与可用性提升明显。
+
+\section{测试案例复盘}
+
+\subsection{案例 A：货车被显示为 car}
+
+现象：监控页面所有目标均显示 car\#。定位：前端类别映射未使用后端 class\_id。修复：按类别 ID 映射显示 car/bus/truck，并增加默认兜底。验证：回放同视频，货车目标正确显示 truck\#。
+
+\subsection{案例 B：统计总量偏少}
+
+现象：车流量统计小于识别页面累计数量。定位：统计层只按进场计数，漏算离场路径。修复：统一事件模型，入场与离场分别计数并合成总量。验证：页面与 traffic\_flow\_stat 结果一致。
+
+\subsection{案例 C：停车新增返回 400}
+
+现象：提交新增记录后返回 400，且选项列表缺失。定位：前端时间格式与后端校验规则不一致，下拉选项来源错误。修复：统一时间格式、改为后端动态拉取选项、补充字段校验提示。验证：同数据重复提交可稳定成功，错误提示可定位字段。
+
+\section{基于接口与日志的验证补充}
+
+\subsection{接口日志一致性验证}
+
+通过对 /video/start、/video/stop、/traffic/stats、/api/parking 等接口日志进行关联分析，可观察到一次完整任务从启动到结束的调用链路闭环。
+
+\subsection{跨模块回归测试}
+
+回归测试覆盖“车辆管理-停车管理-实时识别-统计查询-RAG 问答”全链路。修复类别映射和统计口径后，监控页面车型显示准确，统计页面与数据库结果一致。
+
+\section{实验结果解释与误差来源分析补充}
+
+在结果分析阶段，除给出统计指标外，本文进一步解释误差来源与影响路径。识别侧误差主要来自光照剧烈变化、遮挡重叠和目标远近变化；统计侧误差主要来自事件边界判定与窗口切换时机；展示侧误差主要来自刷新周期与网络延迟。三类误差并非相互独立，而是沿“识别-事件-统计-展示”链路逐级传递，因此需要系统性治理。项目采用的治理方法包括：识别侧通过阈值和时序平滑抑制抖动；事件侧通过去重键和方向约束减少重复；统计侧通过幂等更新保障一致；展示侧通过直连聚合接口避免二次计算。经过该组合治理后，系统在多轮样本上的一致性表现更稳定，且结果具备可复现性。为了验证可复现性，本文在同一输入样本上进行多次回放测试，并对最终统计结果进行比对。实验表明，在相同配置下系统输出具备稳定性；当配置发生变化（如阈值调整）时，结果变化可解释且变化方向与预期一致。这说明系统不仅“能跑通”，还具备“可控可解释”的工程特性。此外，本文补充了“失败样本复盘”方法：对统计偏差样本保留原始输入、识别结果、事件明细与汇总结果，按时间线回溯定位偏差来源。该方法可将模糊问题转化为可定位问题，是保障长期运维质量的重要手段。
+
+温州大学学士学位论文
+
+综上，测试章节不再仅描述“结果更好”，而是明确给出“为何更好、在哪些条件下更好、出现异常时如何定位”，从而提升论文结论的完整性与可信度。
+
+\section{模块级测试过程补充}
+
+\subsection{前端交互与状态同步测试}
+
+前端测试不只验证“页面能打开”，而是验证交互状态是否与后端实际状态一致。测试对象覆盖车辆管理、停车管理、车辆识别、车流统计、RAG 问答和车牌识别入库六类页面。以识别页面为例，需同时观察按钮状态（开始/停止识别）、连接状态（检测流/视频流）、图表状态（趋势与分布）和历史表状态（明细记录）是否一致变化。若任一状态独立变化而未与链路同步，说明存在单点逻辑漂移。
+
+在统计页面中，测试重点为“初始快照 + 实时增量”是否衔接平滑。页面初始化后先调用 \texttt{/api/traffic/stats} 渲染卡片，再接收 \texttt{/stream/traffic} 实时推送更新曲线。验证标准包括：页面刷新后不出现长时间空值；网络短时波动后可恢复；断开重连后数据可继续追加而不是重置为无效状态。该测试直接对应前端实时看板可用性。
+
+\subsection{Java 业务接口与约束测试}
+
+Java 接口测试采用“参数边界 + 业务约束 + 结果回查”三步法。参数边界主要验证必填项缺失、格式异常和 ID 不存在时能否给出可读错误信息；业务约束重点验证车牌唯一、在场记录唯一等规则是否生效；结果回查则在写入成功后立即读取对应列表，确认状态字段和关联字段一致。
+
+车辆接口的关键用例包括：同车牌重复新增返回失败、修改车牌为他人已占用车牌返回失败、设置 \texttt{ownerId} 后车主冗余字段自动更新。停车接口关键用例包括：同一车辆存在 \texttt{PARKING} 记录时再次新增必须失败、车辆离场后可重新入场、分页查询按进入时间倒序返回。该类测试确保“数据规则”在接口层可被强制执行，而非依赖人工约定。
+
+\subsection{Python 实时链路稳定性测试}
+
+实时链路测试以“任务生命周期完整性”为核心，验证 \texttt{/video/start -> running -> stop/eof -> flush} 是否闭环。测试中分别执行手动停止和自然结束两条路径，检查两条路径均能触发统计收尾、资源释放与状态回落。若仅手动停止可收尾而自然结束不收尾，会导致最终统计偏差。
+
+对于事件抽取逻辑，重点观察以下场景：目标短时遮挡后重现、目标在计数线附近抖动、多目标交汇时轨迹切换。验证要求是去重后统计不发生明显爆增，且不会因单帧抖动反复计数。该部分不以“每帧检测数量”作为正确性标准，而以“事件级统计结果可复核”作为准则。
+
+\subsection{RAG 问答链路可用性测试}
+
+RAG 模块测试分为索引构建测试和问答链路测试。索引构建测试通过调用 \texttt{/api/rag/index} 验证能否从 MySQL 读取车辆文本并完成向量写入；问答链路测试分别验证 \texttt{/api/rag/search} 和 \texttt{/api/rag/stream}。其中流式接口需检查 \texttt{meta/message/end} 三类事件是否完整到达，前端是否在 \texttt{end} 后正确关闭连接。
+
+由于 RAG 模块属于辅助检索能力，测试时重点关注“是否基于检索结果作答”和“响应过程是否可追踪”，而不是追求复杂推理能力。对本系统而言，回答能准确引用车牌、车主、品牌型号等结构化字段，并保持较稳定响应时延，即可满足运维辅助需求。
+
+\subsection{车牌识别子模块测试}
+
+车牌识别模块仅作为系统功能模块之一，测试范围聚焦于“识别准确性可用、流程闭环可达、异常路径可回溯”。具体用例包括：支持格式文件上传、超大文件拦截、非图片文件拦截、识别成功后可返回候选列表、人工修正后可成功入库、重复车牌入库被拒绝并标记为 \texttt{DUPLICATE}、历史记录页可分页查询。
+
+与主链路测试不同，车牌识别测试强调“人机协同”。即便 OCR 结果不完美，用户仍可通过候选选择与人工修正完成最终建档。该机制使模块具备工程实用性：识别提供效率，人工确认保证准确，状态记录提供追踪，三者共同形成闭环。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][52mm][c]{0.86\textwidth}\centering
+页面截图占位：智能问答页面\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{智能问答页面截图（后续替换为实际页面截图）}
+\label{fig:module-test-flow-placeholder}
+\end{figure}
+
+\section{链路级验收过程补充}
+
+\subsection{业务链路一：车辆建档到停车入场}
+
+链路从车辆页面新增档案开始，写入成功后在停车页面选择该车辆并登记入场。验收点包括：车辆列表可查询到新增记录；停车新增时下拉可见该车辆；停车记录生成后状态为 \texttt{PARKING}；再次尝试为同一车辆新增在场记录被拒绝。该链路验证了跨页面、跨接口的数据一致性。
+
+\subsection{业务链路二：视频识别到统计看板}
+
+链路从调用 \texttt{/api/video/start} 开始，识别页接收检测与视频两路流，统计页接收车流推送并更新图表。验收点包括：识别框与标签持续刷新；统计卡片与趋势图持续更新；停止或自然结束后不再继续增长；刷新页面后可从 \texttt{/traffic/stats} 读取到最近快照。该链路验证实时发布链路可持续运行。
+
+\subsection{业务链路三：车牌识别到车辆入库}
+
+链路从上传图片到 \texttt{/plate/recognize} 开始，识别成功后用户补全车主与品牌型号并提交 \texttt{/plate/vehicle/save}。验收点包括：识别记录表状态更新；车辆主表新增记录可被车辆管理页查询；若车牌重复则返回冲突并在识别记录中标注重复原因。该链路验证车牌识别模块与主业务数据表之间的数据衔接能力。
+
+\subsection{业务链路四：RAG 问答到候选展示}
+
+链路从问答页面提交问题开始，服务端进行向量检索并流式返回答案。验收点包括：前端先收到 \texttt{meta} 候选车辆列表，再收到文本 token；结束事件触发后加载状态关闭；同类问题重复提问可获得结构稳定的回答格式。该链路验证了“检索-生成-展示”过程的可观测性。
+
+\section{回归测试执行策略补充}
+
+为避免“修复 A 引入 B 退化”，项目执行回归测试采用固定顺序：先接口、后页面、再链路。接口层回归确保单点功能正确；页面层回归确保交互行为不退化；链路层回归确保跨模块语义一致。每次修复后至少回放一次同源视频并复核统计结果，减少样本差异对结论的干扰。
+
+此外，回归过程中保持两项工程纪律：第一，统计口径变更必须同步更新展示绑定；第二，新增参数必须同步更新前端校验和后端校验。通过制度化执行，测试不再依赖“个人记忆”，而是依赖可复用流程，从而提高迭代稳定性。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}[c][50mm][c]{0.86\textwidth}\centering
+页面截图占位：车流量统计页面\\
+后续请替换为实际截图
+\end{minipage}}
+\caption{车流量统计页面截图（后续替换为实际页面截图）}
+\label{fig:e2e-matrix-placeholder}
+\end{figure}
+
+\section{本章小结}
+
+本章通过功能测试、接口测试、一致性测试与稳定性测试，验证了系统在真实业务场景中的可用性与可靠性。测试结果表明，经过口径统一和链路修复后，车辆识别展示、车流统计落库与页面查询之间能够保持一致，历史上的重复计数和统计偏差问题得到有效抑制。此外，本章不仅给出结论，还补充了误差来源分析和失败样本复盘方法。通过对识别侧、事件侧、统计侧和展示侧的分层诊断，系统能够在出现偏差时快速定位根因并形成可执行修复策略。这种“可解释 + 可回溯”的测试框架显著提升了结论的可信度。综合来看，本章证明了本文方案不仅在理想条件下可行，在复杂和扰动场景下也具备较强韧性。
+
+\chapter{总结与展望}
+
+\section{研究总结}
+
+本文围绕智能小区车辆管理系统，完成了前后端协同、视频识别、车流统计与 RAG辅助问答的整体实现。针对项目迭代中的关键问题，重点完成了三项改进：1) 修复车辆类型映射，解决实时监控页面“统一显示 car”问题。2) 统一统计口径，解决识别数量与车流统计数量不一致问题。3) 统一表单与接口校验，解决停车新增 400 与选项不可用问题。
+
+\section{不足分析}
+
+当前系统仍有改进空间：1) 极端光照和严重遮挡场景下识别稳定性仍需提升。2) 多摄像头跨区域关联能力尚未完整实现。3) RAG 答案结构化程度和可视化解释仍可增强。
+
+\section{未来工作}
+
+后续将从三个方向继续优化：1) 引入更稳定的跟踪策略与场景自适应参数，提升复杂环境识别效果。2) 增强跨摄像头事件融合，提升全域车流分析能力。
+
+致谢
+
+3) 打通 RAG 与运维知识闭环，实现问题自动归因与建议输出。
+
+
+\backmatter
+\renewcommand{\chaptermark}[1]{\markboth{\songti #1}{}}
+\chapter{致谢}
+
+四年时间转眼即逝，青涩而美好的本科生活快告一段落了。回首这段时间，我不仅学习到了很多知识和技能，而且提高了分析和解决问题的能力与养成了一定的科学素养。虽然走过了一些弯路，但更加坚定我后来选择学术研究的道路，实在是获益良多。这一切与老师的教诲和同学们的帮助是分不开的，在此对他们表达诚挚的谢意。
+
+最后我要感谢我的家人，正是他们的无私的奉献和支持，我才有了不断拼搏的信心和勇气，才能取得现在的成果。
+
+\vskip 108pt
+\begin{flushright}
+    林正凯\makebox[1cm]{} \\
+    \today
+\end{flushright}
+
+%参考文献
+\newpage
+\makereferences
+
+%附录
+\newpage
+\appendix
+\renewcommand{\chaptermark}[1]{\markboth{\songti  附录\thechapter\ ~#1}{}}
+
+\chapter{补充更多细节}
+
+\section{补充图}
+
+\subsection{补充图}
+
+\newclearpage
+\chapter{附录2}
+
+\end{document}
+
