@@ -3,7 +3,10 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>车辆管理</span>
+          <span class="header-title">
+            <el-icon><Van /></el-icon>
+            车辆管理
+          </span>
           <el-button type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
             新增车辆
@@ -408,6 +411,12 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .search-form {

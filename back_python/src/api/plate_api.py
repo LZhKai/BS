@@ -8,7 +8,9 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 
 from config import Config
-from src.utils.database import execute_insert, execute_query, execute_update
+from sqlalchemy import text
+
+from src.utils.database import engine, execute_insert, execute_query, execute_update
 from src.video.plate_recognizer import PlateRecognizer
 
 plate_bp = Blueprint("plate", __name__)
@@ -61,14 +63,6 @@ def _save_record(image_path, recognized_plate, confidence, raw_text, status, err
     return int(row_id)
 
 
-def _record_exists_plate(plate_number: str) -> bool:
-    result = execute_query(
-        "SELECT id FROM vehicle WHERE plate_number = :plate_number LIMIT 1",
-        {"plate_number": plate_number},
-    )
-    return len(result) > 0
-
-
 def _allowed_file(filename: str) -> bool:
     ext = os.path.splitext(filename.lower())[1]
     return ext in ALLOWED_EXTENSIONS
@@ -93,7 +87,8 @@ except Exception as e:
     print(f"Warning: failed to init plate_recognition_record table: {e}")
 
 
-@plate_bp.route("/plate/recognize", methods=["POST"])
+@plate_bp.route("/register/recognize", methods=["POST"])
+@plate_bp.route("/plate/recognize", methods=["POST"])  # backward compatible
 def recognize_plate():
     if "file" not in request.files:
         return jsonify({"code": 400, "message": "Missing file field 'file'"})
@@ -170,13 +165,15 @@ def recognize_plate():
         return jsonify({"code": 500, "message": f"识别异常: {str(e)}", "data": {"recordId": record_id}})
 
 
-@plate_bp.route("/plate/vehicle/save", methods=["POST"])
+@plate_bp.route("/register/vehicle/save", methods=["POST"])
+@plate_bp.route("/plate/vehicle/save", methods=["POST"])  # backward compatible
 def save_vehicle_by_plate():
     data = request.get_json() or {}
     record_id = data.get("recordId")
     plate_number = (data.get("plateNumber") or "").strip().upper()
     owner_name = (data.get("ownerName") or "").strip()
     owner_phone = (data.get("ownerPhone") or "").strip()
+    owner_address = (data.get("ownerAddress") or "").strip()
     brand_model = (data.get("brandModel") or "").strip()
     description = (data.get("description") or "").strip()
     status = (data.get("status") or "NORMAL").strip()
@@ -193,34 +190,122 @@ def save_vehicle_by_plate():
         return jsonify({"code": 400, "message": "车牌格式不合法"})
 
     try:
-        if _record_exists_plate(plate_number):
-            execute_update(
-                "UPDATE plate_recognition_record SET status='DUPLICATE', error_message='Vehicle already exists' WHERE id=:id",
-                {"id": record_id},
+        owner_phone_norm = owner_phone or None
+
+        with engine.begin() as conn:
+            # 1) Find or create owner
+            owner_id = None
+            if owner_phone_norm:
+                row = conn.execute(
+                    text("SELECT id, name, address FROM vehicle_owner WHERE phone = :phone LIMIT 1"),
+                    {"phone": owner_phone_norm},
+                ).fetchone()
+                if row:
+                    owner_id = int(row.id)
+                    if owner_name and row.name != owner_name:
+                        conn.execute(
+                            text("UPDATE vehicle_owner SET name = :name WHERE id = :id"),
+                            {"name": owner_name, "id": owner_id},
+                        )
+                    if owner_address:
+                        conn.execute(
+                            text("UPDATE vehicle_owner SET address = :address WHERE id = :id"),
+                            {"address": owner_address, "id": owner_id},
+                        )
+                    elif row.address is None:
+                        conn.execute(
+                            text("UPDATE vehicle_owner SET address = '' WHERE id = :id"),
+                            {"id": owner_id},
+                        )
+            else:
+                row = conn.execute(
+                    text(
+                        """
+                        SELECT id
+                        FROM vehicle_owner
+                        WHERE name = :name AND (phone IS NULL OR phone = '')
+                        LIMIT 1
+                        """
+                    ),
+                    {"name": owner_name},
+                ).fetchone()
+                if row:
+                    owner_id = int(row.id)
+
+            if owner_id is None:
+                result = conn.execute(
+                    text(
+                        """
+                        INSERT INTO vehicle_owner (name, phone, address)
+                        VALUES (:name, :phone, :address)
+                        """
+                    ),
+                    {"name": owner_name, "phone": owner_phone_norm, "address": owner_address or ""},
+                )
+                owner_id = int(result.lastrowid)
+
+            # 2) Insert or update vehicle
+            existing = conn.execute(
+                text("SELECT id FROM vehicle WHERE plate_number = :plate_number LIMIT 1"),
+                {"plate_number": plate_number},
+            ).fetchone()
+
+            if existing:
+                conn.execute(
+                    text(
+                        """
+                        UPDATE vehicle
+                        SET owner_id = :owner_id,
+                            owner_name = :owner_name,
+                            owner_phone = :owner_phone,
+                            brand_model = :brand_model,
+                            description = :description,
+                            status = :status
+                        WHERE plate_number = :plate_number
+                        """
+                    ),
+                    {
+                        "owner_id": owner_id,
+                        "owner_name": owner_name,
+                        "owner_phone": owner_phone_norm,
+                        "brand_model": brand_model,
+                        "description": description or None,
+                        "status": status or "NORMAL",
+                        "plate_number": plate_number,
+                    },
+                )
+                conn.execute(
+                    text(
+                        "UPDATE plate_recognition_record SET status='UPDATED', recognized_plate=:plate WHERE id=:id"
+                    ),
+                    {"id": record_id, "plate": plate_number},
+                )
+                return jsonify({"code": 200, "message": "登记成功（已更新车辆与车主信息）"})
+
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO vehicle
+                    (plate_number, owner_id, owner_name, owner_phone, brand_model, description, status)
+                    VALUES (:plate_number, :owner_id, :owner_name, :owner_phone, :brand_model, :description, :status)
+                    """
+                ),
+                {
+                    "plate_number": plate_number,
+                    "owner_id": owner_id,
+                    "owner_name": owner_name,
+                    "owner_phone": owner_phone_norm,
+                    "brand_model": brand_model,
+                    "description": description or None,
+                    "status": status or "NORMAL",
+                },
             )
-            return jsonify({"code": 409, "message": "车牌已存在，未新增"})
 
-        execute_update(
-            """
-            INSERT INTO vehicle
-            (plate_number, owner_name, owner_phone, brand_model, description, status)
-            VALUES (:plate_number, :owner_name, :owner_phone, :brand_model, :description, :status)
-            """,
-            {
-                "plate_number": plate_number,
-                "owner_name": owner_name,
-                "owner_phone": owner_phone or None,
-                "brand_model": brand_model,
-                "description": description or None,
-                "status": status or "NORMAL",
-            },
-        )
-
-        execute_update(
-            "UPDATE plate_recognition_record SET status='SAVED', recognized_plate=:plate WHERE id=:id",
-            {"id": record_id, "plate": plate_number},
-        )
-        return jsonify({"code": 200, "message": "入库成功"})
+            conn.execute(
+                text("UPDATE plate_recognition_record SET status='SAVED', recognized_plate=:plate WHERE id=:id"),
+                {"id": record_id, "plate": plate_number},
+            )
+            return jsonify({"code": 200, "message": "登记成功（已写入车辆与车主信息）"})
     except Exception as e:
         execute_update(
             "UPDATE plate_recognition_record SET status='FAILED', error_message=:error_message WHERE id=:id",
@@ -229,7 +314,8 @@ def save_vehicle_by_plate():
         return jsonify({"code": 500, "message": f"入库失败: {str(e)}"})
 
 
-@plate_bp.route("/plate/records", methods=["GET"])
+@plate_bp.route("/register/records", methods=["GET"])
+@plate_bp.route("/plate/records", methods=["GET"])  # backward compatible
 def list_plate_records():
     current = int(request.args.get("current", 1))
     size = int(request.args.get("size", 10))

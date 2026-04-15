@@ -7,15 +7,6 @@ from flask_socketio import SocketIO
 
 from config import Config
 
-# 可选导入：API蓝图
-try:
-    from src.api.streaming_api import streaming_bp
-    STREAMING_AVAILABLE = True
-except ImportError as e:
-    print(f"警告: 无法导入streaming_api: {e}")
-    STREAMING_AVAILABLE = False
-    streaming_bp = None
-
 try:
     from src.api.video_api import video_bp
     VIDEO_AVAILABLE = True
@@ -61,8 +52,6 @@ def serve_video(filename):
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # 注册蓝图（如果可用）
-if STREAMING_AVAILABLE and streaming_bp:
-    app.register_blueprint(streaming_bp, url_prefix='/api')
 if VIDEO_AVAILABLE and video_bp:
     app.register_blueprint(video_bp, url_prefix='/api')
 if RAG_AVAILABLE and rag_bp:
@@ -70,13 +59,12 @@ if RAG_AVAILABLE and rag_bp:
 if PLATE_AVAILABLE and plate_bp:
     app.register_blueprint(plate_bp, url_prefix='/api')
 
-# 导入SocketIO事件处理（如果可用）
-if STREAMING_AVAILABLE:
-    try:
-        from src.api.streaming_api import register_socketio_events
-        register_socketio_events(socketio)
-    except Exception as e:
-        print(f"警告: 无法注册SocketIO事件: {e}")
+# SocketIO事件处理（车辆识别/视频流）
+try:
+    from src.api.streaming_api import register_socketio_events
+    register_socketio_events(socketio)
+except Exception as e:
+    print(f"警告: 无法注册SocketIO事件: {e}")
 
 @app.route('/')
 def index():

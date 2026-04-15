@@ -17,3 +17,12 @@ export const askRagQuestion = (data) => {
   })
 }
 
+// 获取智能问答历史
+export const getRagHistory = (params) => {
+  return requestPy({
+    url: '/rag/history',
+    method: 'get',
+    params
+  })
+}
+

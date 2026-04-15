@@ -4,7 +4,7 @@ export const recognizePlate = (file) => {
   const formData = new FormData()
   formData.append('file', file)
   return requestPy({
-    url: '/plate/recognize',
+    url: '/register/recognize',
     method: 'post',
     data: formData,
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -14,7 +14,7 @@ export const recognizePlate = (file) => {
 
 export const saveRecognizedVehicle = (data) => {
   return requestPy({
-    url: '/plate/vehicle/save',
+    url: '/register/vehicle/save',
     method: 'post',
     data
   })
@@ -22,7 +22,7 @@ export const saveRecognizedVehicle = (data) => {
 
 export const getPlateRecords = (params) => {
   return requestPy({
-    url: '/plate/records',
+    url: '/register/records',
     method: 'get',
     params
   })

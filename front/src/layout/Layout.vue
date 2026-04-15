@@ -27,7 +27,7 @@
           class="sidebar-menu"
         >
           <el-menu-item index="/vehicle">
-            <el-icon><Truck /></el-icon>
+            <el-icon><Van /></el-icon>
             <span>车辆管理</span>
           </el-menu-item>
           <el-menu-item index="/owner">
@@ -42,17 +42,13 @@
             <el-icon><ChatLineRound /></el-icon>
             <span>智能问答</span>
           </el-menu-item>
-          <el-menu-item index="/traffic">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>车流量统计</span>
-          </el-menu-item>
           <el-menu-item index="/detection">
             <el-icon><VideoCamera /></el-icon>
-            <span>车辆识别</span>
+            <span>车辆监控</span>
           </el-menu-item>
           <el-menu-item index="/plate-recognition">
             <el-icon><Document /></el-icon>
-            <span>车牌识别入库</span>
+            <span>车辆登记</span>
           </el-menu-item>
         </el-menu>
       </el-aside>

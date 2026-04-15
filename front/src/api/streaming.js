@@ -3,47 +3,11 @@ import { io } from 'socket.io-client'
 
 class StreamingWebSocket {
   constructor() {
-    this.trafficSocket = null
     this.detectionSocket = null
     this.videoSocket = null
-    this.trafficCallbacks = []
     this.detectionCallbacks = []
+    this.monitorAggCallbacks = []
     this.videoCallbacks = []
-  }
-
-  connectTraffic(callback) {
-    if (this.trafficSocket && this.trafficSocket.connected) {
-      if (callback) callback('connected')
-      return
-    }
-
-    const wsUrl = 'http://localhost:5000'
-    this.trafficSocket = io(wsUrl + '/stream/traffic', {
-      transports: ['polling']
-    })
-
-    this.trafficSocket.on('connect', () => {
-      console.log('Traffic socket connected')
-      if (callback) callback('connected')
-    })
-
-    this.trafficSocket.on('traffic_data', (data) => {
-      this.trafficCallbacks.forEach((cb) => cb({ type: 'traffic_data', data }))
-    })
-
-    this.trafficSocket.on('connected', (data) => {
-      console.log('Traffic server ack:', data)
-    })
-
-    this.trafficSocket.on('connect_error', (error) => {
-      console.error('Traffic socket error:', error)
-      if (callback) callback('error', error)
-    })
-
-    this.trafficSocket.on('disconnect', () => {
-      console.log('Traffic socket disconnected')
-      if (callback) callback('closed')
-    })
   }
 
   connectDetection(callback) {
@@ -53,7 +17,7 @@ class StreamingWebSocket {
     }
 
     const wsUrl = 'http://localhost:5000'
-    this.detectionSocket = io(wsUrl + '/stream/detection', {
+    this.detectionSocket = io(wsUrl + '/stream/monitor', {
       transports: ['polling']
     })
 
@@ -64,6 +28,9 @@ class StreamingWebSocket {
 
     this.detectionSocket.on('detection_data', (data) => {
       this.detectionCallbacks.forEach((cb) => cb({ type: 'detection_data', data }))
+    })
+    this.detectionSocket.on('monitor_agg_data', (data) => {
+      this.monitorAggCallbacks.forEach((cb) => cb({ type: 'monitor_agg_data', data }))
     })
 
     this.detectionSocket.on('connected', (data) => {
@@ -81,32 +48,24 @@ class StreamingWebSocket {
     })
   }
 
-  subscribeTraffic(callback) {
-    if (!this.trafficCallbacks.includes(callback)) {
-      this.trafficCallbacks.push(callback)
-    }
-  }
-
   subscribeDetection(callback) {
     if (!this.detectionCallbacks.includes(callback)) {
       this.detectionCallbacks.push(callback)
     }
   }
 
-  unsubscribeTraffic(callback) {
-    this.trafficCallbacks = this.trafficCallbacks.filter((cb) => cb !== callback)
+  subscribeMonitorAgg(callback) {
+    if (!this.monitorAggCallbacks.includes(callback)) {
+      this.monitorAggCallbacks.push(callback)
+    }
   }
 
   unsubscribeDetection(callback) {
     this.detectionCallbacks = this.detectionCallbacks.filter((cb) => cb !== callback)
   }
 
-  disconnectTraffic() {
-    if (this.trafficSocket) {
-      this.trafficSocket.disconnect()
-      this.trafficSocket = null
-    }
-    this.trafficCallbacks = []
+  unsubscribeMonitorAgg(callback) {
+    this.monitorAggCallbacks = this.monitorAggCallbacks.filter((cb) => cb !== callback)
   }
 
   disconnectDetection() {
@@ -115,6 +74,7 @@ class StreamingWebSocket {
       this.detectionSocket = null
     }
     this.detectionCallbacks = []
+    this.monitorAggCallbacks = []
   }
 
   connectVideo(callback) {
@@ -124,7 +84,7 @@ class StreamingWebSocket {
     }
 
     const wsUrl = 'http://localhost:5000'
-    this.videoSocket = io(wsUrl + '/stream/video', {
+    this.videoSocket = io(wsUrl + '/stream/monitor-video', {
       transports: ['polling']
     })
 
@@ -171,7 +131,6 @@ class StreamingWebSocket {
   }
 
   disconnectAll() {
-    this.disconnectTraffic()
     this.disconnectDetection()
     this.disconnectVideo()
   }
@@ -179,16 +138,9 @@ class StreamingWebSocket {
 
 export const streamingWS = new StreamingWebSocket()
 
-export const getTrafficStats = () => {
-  return request({
-    url: 'http://localhost:5000/api/traffic/stats',
-    method: 'get'
-  })
-}
-
 export const startVideoProcessing = (source) => {
   return request({
-    url: 'http://localhost:5000/api/video/start',
+    url: 'http://localhost:5000/api/monitor/start',
     method: 'post',
     data: { source }
   })
@@ -196,14 +148,14 @@ export const startVideoProcessing = (source) => {
 
 export const stopVideoProcessing = () => {
   return request({
-    url: 'http://localhost:5000/api/video/stop',
+    url: 'http://localhost:5000/api/monitor/stop',
     method: 'post'
   })
 }
 
 export const getVideoStatus = () => {
   return request({
-    url: 'http://localhost:5000/api/video/status',
+    url: 'http://localhost:5000/api/monitor/status',
     method: 'get'
   })
 }

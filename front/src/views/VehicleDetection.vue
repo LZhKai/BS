@@ -1,9 +1,9 @@
-﻿<template>
+<template>
   <div class="vehicle-detection-container">
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>车辆识别监控</span>
+          <span>车辆监控</span>
           <div>
             <el-button
               :type="videoStatus.isRunning ? 'danger' : 'primary'"
@@ -36,7 +36,7 @@
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-value">{{ detectionStats.currentCount }}</div>
-              <div class="stat-label">当前时段车流量</div>
+              <div class="stat-label">当前识别车辆数</div>
             </div>
           </el-card>
         </el-col>
@@ -80,7 +80,7 @@
         <el-col :span="12">
           <el-card>
             <template #header>
-              <span>车辆识别数量趋势</span>
+              <span>车辆监控数量趋势</span>
             </template>
             <div ref="detectionChartRef" style="height: 400px"></div>
           </el-card>
@@ -149,9 +149,11 @@ const typeChartRef = ref(null)
 const videoCanvasRef = ref(null)
 const canvasWidth = ref(1280)
 const canvasHeight = ref(720)
+const sparkEnabled = ref(false)
 let detectionChart = null
 let typeChart = null
 let statusTimer = null
+let lastAggUpdateAt = 0
 
 const videoStatus = ref({
   isRunning: false
@@ -244,7 +246,7 @@ const initCharts = () => {
   detectionChart = echarts.init(detectionChartRef.value)
   detectionChart.setOption({
     title: {
-      text: '车辆识别数量趋势',
+      text: '车辆监控数量趋势',
       left: 'center'
     },
     tooltip: {
@@ -260,7 +262,7 @@ const initCharts = () => {
     },
     series: [
       {
-        name: '当前时段车流量',
+        name: '当前识别车辆数',
         type: 'line',
         data: [],
         smooth: true,
@@ -300,9 +302,9 @@ const initCharts = () => {
   })
 }
 
-const updateCharts = (data) => {
+const updateSummaryCharts = (data) => {
   const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString()
-  const flowTotalCount = data.totalCount ?? ((data.entryCount || 0) + (data.exitCount || 0))
+  const flowTotalCount = data.totalCount ?? data.currentHourCount ?? 0
 
   detectionTimeSeries.timestamps.push(timestamp)
   detectionTimeSeries.counts.push(flowTotalCount)
@@ -347,7 +349,11 @@ const updateCharts = (data) => {
   detectionStats.value.currentCount = flowTotalCount
   detectionStats.value.carCount = vehicleTypeStats.car
   detectionStats.value.truckCount = vehicleTypeStats.truck
+}
 
+const appendDetectionHistory = (data) => {
+  const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString()
+  const flowTotalCount = data.totalCount ?? data.vehicle_count ?? 0
   const vehicles = data.vehicles || []
   const typeCounts = buildTypeCounts(vehicles)
   const avgConfidence = vehicles.length > 0
@@ -369,7 +375,21 @@ const updateCharts = (data) => {
 
 const handleDetectionData = (data) => {
   if (data.type === 'detection_data') {
-    updateCharts(data.data)
+    // Fallback:
+    // 1) Spark unavailable -> always use detection stream
+    // 2) Spark enabled but aggregate stream stale -> temporarily fallback
+    const now = Date.now()
+    if (!sparkEnabled.value || now - lastAggUpdateAt > 8000) {
+      updateSummaryCharts(data.data)
+    }
+    appendDetectionHistory(data.data)
+  }
+}
+
+const handleMonitorAggData = (data) => {
+  if (data.type === 'monitor_agg_data') {
+    lastAggUpdateAt = Date.now()
+    updateSummaryCharts(data.data)
   }
 }
 
@@ -460,6 +480,7 @@ const toggleConnection = () => {
       }
     })
     streamingWS.subscribeDetection(handleDetectionData)
+    streamingWS.subscribeMonitorAgg(handleMonitorAggData)
 
     streamingWS.connectVideo((status) => {
       if (status === 'connected') {
@@ -479,6 +500,7 @@ const checkVideoStatus = async () => {
     const res = await getVideoStatus()
     if (res.code === 200) {
       videoStatus.value = res.data
+      sparkEnabled.value = !!res.data.spark_enabled
       if (wasRunning && !videoStatus.value.isRunning) {
         ElMessage.info('视频已结束，识别已自动停止')
       }

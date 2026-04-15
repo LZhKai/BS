@@ -15,11 +15,6 @@ class Config:
     PORT = int(os.getenv('PORT', 5000))
     DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
     
-    # Kafka配置
-    KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
-    KAFKA_TOPIC_VEHICLE = os.getenv('KAFKA_TOPIC_VEHICLE', 'vehicle_detection')
-    KAFKA_TOPIC_TRAFFIC = os.getenv('KAFKA_TOPIC_TRAFFIC', 'traffic_flow')
-    
     # MySQL配置
     MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
     MYSQL_PORT = int(os.getenv('MYSQL_PORT', 3306))
@@ -27,15 +22,13 @@ class Config:
     MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', '123456')
     MYSQL_DATABASE = os.getenv('MYSQL_DATABASE', 'vehicle_management')
     
-    # Spark配置
-    SPARK_MASTER = os.getenv('SPARK_MASTER', 'local[*]')
-    SPARK_APP_NAME = 'VehicleManagementStreaming'
-    
     # 视频处理配置
     VIDEO_SOURCE = os.getenv('VIDEO_SOURCE', 'videos/test_video.mp4')  # 视频文件路径，格式：videos/文件名.mp4，或使用摄像头：0
     VIDEO_FPS = int(os.getenv('VIDEO_FPS', 30))
     VIDEO_WIDTH = int(os.getenv('VIDEO_WIDTH', 1280))
     VIDEO_HEIGHT = int(os.getenv('VIDEO_HEIGHT', 720))
+    MONITOR_STREAM_BATCH_SECONDS = int(os.getenv('MONITOR_STREAM_BATCH_SECONDS', 5))
+    MONITOR_STREAM_WINDOW_SECONDS = int(os.getenv('MONITOR_STREAM_WINDOW_SECONDS', 30))
     
     # 视频文件目录（back_python/videos）
     _base_dir = os.path.dirname(os.path.abspath(__file__))  # back_python目录

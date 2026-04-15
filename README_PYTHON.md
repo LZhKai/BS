@@ -6,18 +6,12 @@
 
 ## 功能特性
 
-### 1. Spark Streaming实时数据处理
-- 从Kafka接收车辆识别数据流
-- 实时统计车流量
-- 处理车辆进出数据
-
-### 2. 视频监控与车辆识别
+### 1. 视频监控与车辆识别
 - 使用OpenCV处理视频流
 - 使用YOLO模型进行车辆检测
 - 支持实时车辆识别
 
-### 3. WebSocket实时数据推送
-- 实时推送车流量数据到前端
+### 2. WebSocket实时数据推送
 - 实时推送车辆识别结果
 
 ## 快速开始
@@ -26,7 +20,6 @@
 
 - Python 3.8+
 - Java 8+ (Spark需要)
-- Kafka (可选，用于流处理)
 - MySQL 5.7+
 
 ### 2. 安装依赖
@@ -46,20 +39,12 @@ HOST=0.0.0.0
 PORT=5000
 DEBUG=True
 
-# Kafka配置（可选）
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-KAFKA_TOPIC_VEHICLE=vehicle_detection
-KAFKA_TOPIC_TRAFFIC=traffic_flow
-
 # MySQL配置
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_USER=root
 MYSQL_PASSWORD=123456
 MYSQL_DATABASE=vehicle_management
-
-# Spark配置
-SPARK_MASTER=local[*]
 
 # 视频处理配置
 VIDEO_SOURCE=0  # 0为摄像头，也可以是视频文件路径
@@ -94,16 +79,12 @@ python app.py
 ### REST API
 
 - `GET /` - 健康检查
-- `GET /api/traffic/stats` - 获取车流量统计
 - `POST /api/video/start` - 启动视频处理
 - `POST /api/video/stop` - 停止视频处理
 - `GET /api/video/status` - 获取视频处理状态
-- `POST /api/streaming/start` - 启动Spark Streaming
-- `POST /api/streaming/stop` - 停止Spark Streaming
 
 ### WebSocket接口
 
-- `ws://localhost:5000/stream/traffic` - 车流量实时数据流
 - `ws://localhost:5000/stream/detection` - 车辆识别实时数据流
 
 ## 项目结构
@@ -115,13 +96,11 @@ back_python/
 ├── requirements.txt            # Python依赖
 ├── .env                        # 环境变量配置（需创建）
 ├── src/
-│   ├── streaming/              # Spark Streaming模块
-│   │   ├── spark_streaming.py  # 流处理逻辑
 │   ├── video/                   # 视频处理模块
 │   │   ├── video_processor.py  # 视频处理器
 │   │   ├── vehicle_detector.py # 车辆检测器
 │   ├── api/                     # API接口
-│   │   ├── streaming_api.py    # 流处理API
+│   │   ├── streaming_api.py    # SocketIO事件桥接（识别/视频）
 │   │   └── video_api.py         # 视频处理API
 │   └── utils/                   # 工具类
 │       └── database.py          # 数据库工具
@@ -140,16 +119,13 @@ back_python/
 
 ### 查看实时数据
 
-1. 访问前端"车流量统计"页面
-2. 点击"连接数据流"按钮
-3. 实时数据会通过图表展示
+识别结果会通过 WebSocket 推送到前端页面进行展示。
 
 ## 注意事项
 
 1. **YOLO模型**：首次运行会自动下载YOLO模型，需要网络连接
 2. **摄像头权限**：确保系统有摄像头访问权限
-3. **Kafka（可选）**：如果不需要Kafka流处理，可以注释相关代码
-4. **性能优化**：视频处理会消耗较多资源，建议在性能较好的机器上运行
+3. **性能优化**：视频处理会消耗较多资源，建议在性能较好的机器上运行
 
 ## 故障排查
 
@@ -167,9 +143,7 @@ back_python/
 
 ### 3. Spark Streaming无法启动
 
-- 检查Java环境是否正确安装
-- 检查Kafka是否启动（如果使用）
-- 检查Spark配置是否正确
+（已移除 Spark Streaming 车流量统计模块）
 
 ## 后续开发
 

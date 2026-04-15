@@ -44,21 +44,47 @@
           <el-table-column prop="owner_address" label="车主地址/车位" min-width="180" show-overflow-tooltip />
           <el-table-column prop="description" label="车辆描述" min-width="220" show-overflow-tooltip />
         </el-table>
+
+        <el-divider>问答历史</el-divider>
+        <el-table :data="historyRecords" border style="width: 100%">
+          <el-table-column prop="createTime" label="时间" width="180" />
+          <el-table-column prop="question" label="问题" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="answer" label="回答" min-width="300" show-overflow-tooltip />
+          <el-table-column prop="hitCount" label="命中数" width="90" />
+          <el-table-column prop="status" label="状态" width="100" />
+          <el-table-column prop="errorMessage" label="错误信息" min-width="180" show-overflow-tooltip />
+        </el-table>
+        <div class="history-pagination">
+          <el-pagination
+            v-model:current-page="historyPagination.current"
+            v-model:page-size="historyPagination.size"
+            :total="historyPagination.total"
+            layout="total, prev, pager, next"
+            @current-change="loadHistory"
+          />
+        </div>
       </div>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { rebuildRagIndex } from '../api/rag'
+import { rebuildRagIndex, getRagHistory } from '../api/rag'
 
 const question = ref('')
 const answer = ref('')
 const vehicles = ref([])
 const loading = ref(false)
 const indexLoading = ref(false)
+const historyRecords = ref([])
+const defaultTopK = 10
+const historyPagination = reactive({
+  current: 1,
+  size: 10,
+  total: 0
+})
 
 let eventSource = null
 
@@ -84,7 +110,7 @@ const handleAsk = () => {
 
   const url = `/py-api/rag/stream?question=${encodeURIComponent(
     question.value
-  )}&top_k=5`
+  )}&top_k=${defaultTopK}`
 
   const es = new EventSource(url)
   eventSource = es
@@ -115,6 +141,18 @@ const handleAsk = () => {
   es.addEventListener('end', () => {
     closeEventSource()
     loading.value = false
+    loadHistory()
+  })
+
+  es.addEventListener('error', (e) => {
+    try {
+      const data = JSON.parse(e.data || '{}')
+      if (data.message) {
+        ElMessage.error(`问答失败：${data.message}`)
+      }
+    } catch (_) {
+      // ignore parse error
+    }
   })
 
   es.onerror = (err) => {
@@ -144,6 +182,23 @@ const handleRebuildIndex = async () => {
     indexLoading.value = false
   }
 }
+
+const loadHistory = async () => {
+  try {
+    const res = await getRagHistory({
+      current: historyPagination.current,
+      size: historyPagination.size
+    })
+    historyRecords.value = res.data.records || []
+    historyPagination.total = res.data.total || 0
+  } catch (e) {
+    ElMessage.error('加载问答历史失败')
+  }
+}
+
+onMounted(() => {
+  loadHistory()
+})
 
 onUnmounted(() => {
   closeEventSource()
@@ -187,6 +242,12 @@ onUnmounted(() => {
   max-height: 260px;
   overflow-y: auto;
   font-size: 14px;
+}
+
+.history-pagination {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
 

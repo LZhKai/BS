@@ -2,6 +2,7 @@
 Video processing API.
 """
 import os
+import time
 
 from flask import Blueprint, jsonify, request
 from config import Config
@@ -15,13 +16,12 @@ except ImportError as e:
     VIDEO_PROCESSOR_AVAILABLE = False
     VideoProcessor = None
 
-# Optional import: websocket senders and traffic stats updater
+# Optional import: websocket senders
 try:
     from src.api.streaming_api import (
         send_detection_data,
-        send_traffic_data,
-        update_traffic_stats,
-        flush_traffic_persistence,
+        send_monitor_agg_data,
+        send_video_frame,
     )
     STREAMING_BRIDGE_AVAILABLE = True
 except ImportError:
@@ -30,19 +30,19 @@ except ImportError:
     def send_detection_data(_data):
         return None
 
-    def send_traffic_data(_data):
+    def send_monitor_agg_data(_data):
         return None
 
-    def update_traffic_stats(entry_count=0, exit_count=0, timestamp=None):
-        return {
-            'timestamp': timestamp,
-            'entryCount': int(entry_count or 0),
-            'exitCount': int(exit_count or 0),
-            'totalCount': int(entry_count or 0) + int(exit_count or 0),
-        }
-
-    def flush_traffic_persistence(timestamp=None):
+    def send_video_frame(_data):
         return None
+
+try:
+    from src.streaming.monitor_streaming import monitor_streamer
+    MONITOR_STREAM_AVAILABLE = monitor_streamer.available
+except Exception as e:
+    print(f"Warning: failed to import monitor_streamer: {e}")
+    MONITOR_STREAM_AVAILABLE = False
+    monitor_streamer = None
 
 
 video_bp = Blueprint('video', __name__)
@@ -298,62 +298,56 @@ def detection_callback(result):
     result['exitCount'] = tracking['exit_count']
     result['lineY'] = FLOW_LINE_Y
 
-    # Build traffic payload for the Traffic page.
-    entry_count = result.get('entryCount', result.get('entry_count'))
-    exit_count = result.get('exitCount', result.get('exit_count'))
+    # Default fallback metrics (non-Spark path).
+    result['totalCount'] = frame_vehicle_count
+    result['todayCount'] = tracking['unique_vehicle_count']
+    result['currentHourCount'] = frame_vehicle_count
 
-    # Fallback when no crossing event is detected in this frame.
-    # Keep traffic stats aligned with detection growth by counting new unique
-    # vehicles as entry when entry/exit are both empty or zero.
-    if entry_count is None and exit_count is None:
-        entry_count = _to_int(result.get('new_vehicle_count', 0))
-        exit_count = 0
-    else:
-        entry_count = _to_int(entry_count, 0)
-        exit_count = _to_int(exit_count, 0)
-        if entry_count == 0 and exit_count == 0:
-            entry_count = _to_int(result.get('new_vehicle_count', 0))
-
-    traffic_payload = update_traffic_stats(
-        entry_count=_to_int(entry_count, 0),
-        exit_count=_to_int(exit_count, 0),
-        timestamp=result.get('timestamp')
-    )
-
-    # Align detection stream metrics with traffic metric fields.
-    result['entryCount'] = traffic_payload.get('entryCount', 0)
-    result['exitCount'] = traffic_payload.get('exitCount', 0)
-    result['totalCount'] = traffic_payload.get('totalCount', 0)
-    result['todayCount'] = traffic_payload.get('todayCount', result.get('todayCount', 0))
-    result['currentHourCount'] = traffic_payload.get('currentHourCount', result.get('currentHourCount', 0))
+    # Feed spark micro-batch stream when available.
+    if MONITOR_STREAM_AVAILABLE and monitor_streamer:
+        ts = result.get('timestamp')
+        for v in vehicles:
+            monitor_streamer.append_event(
+                {
+                    "ts": _to_int(ts, 0) if isinstance(ts, (int, float)) else time.time(),
+                    "track_id": _to_int(v.get("track_id"), -1),
+                    "vehicle_type": _normalize_vehicle_type(v.get("class")) or "unknown",
+                    "confidence": float(v.get("confidence", 0.0) or 0.0),
+                    "frame_id": _to_int(result.get("frame_id"), 0),
+                }
+            )
+        latest = monitor_streamer.get_latest_metrics()
+        if latest:
+            result['totalCount'] = latest.get('totalCount', result['totalCount'])
+            result['todayCount'] = latest.get('todayCount', result['todayCount'])
+            result['currentHourCount'] = latest.get('currentHourCount', result['currentHourCount'])
+            if latest.get("unique_by_type"):
+                result['unique_by_type'] = latest.get("unique_by_type")
 
     # Forward detection payload for the Detection page.
     if STREAMING_BRIDGE_AVAILABLE:
         send_detection_data(result)
 
-    if STREAMING_BRIDGE_AVAILABLE:
-        send_traffic_data(traffic_payload)
-
 
 
 def frame_callback(frame_data):
     """Handle frame callback and forward to websocket."""
-    try:
-        from src.api.streaming_api import send_video_frame
-        send_video_frame(frame_data)
-    except Exception as e:
-        print(f"Failed to send video frame: {e}")
+    if STREAMING_BRIDGE_AVAILABLE:
+        try:
+            send_video_frame(frame_data)
+        except Exception as e:
+            print(f"Failed to send video frame: {e}")
 
 
 def on_video_end(_reason='eof'):
-    """Flush aggregated traffic stats when video naturally ends."""
-    try:
-        flush_traffic_persistence()
-    except Exception as e:
-        print(f"Failed to flush traffic stats on video end: {e}")
+    """Handle video end."""
+    if MONITOR_STREAM_AVAILABLE and monitor_streamer:
+        monitor_streamer.stop()
+    return None
 
 
-@video_bp.route('/video/start', methods=['POST'])
+@video_bp.route('/monitor/start', methods=['POST'])
+@video_bp.route('/video/start', methods=['POST'])  # backward compatible
 def start_video_processing():
     """Start video processing."""
     global video_processor
@@ -368,6 +362,13 @@ def start_video_processing():
         _reset_tracker_state()
         data = request.get_json() or {}
         source = data.get('source', None)
+        spark_started = False
+
+        if MONITOR_STREAM_AVAILABLE and monitor_streamer:
+            monitor_streamer.set_on_metrics(send_monitor_agg_data if STREAMING_BRIDGE_AVAILABLE else None)
+            spark_started = monitor_streamer.start()
+        else:
+            print("Warning: monitor_streamer unavailable, fallback to non-spark metrics")
 
         video_processor = VideoProcessor(
             callback=detection_callback,
@@ -381,14 +382,16 @@ def start_video_processing():
             'message': 'Video processing started',
             'data': {
                 'source': source or 'default',
-                'status': 'running'
+                'status': 'running',
+                'spark_enabled': spark_started
             }
         })
     except Exception as e:
         return jsonify({'code': 500, 'message': f'Start failed: {str(e)}'})
 
 
-@video_bp.route('/video/stop', methods=['POST'])
+@video_bp.route('/monitor/stop', methods=['POST'])
+@video_bp.route('/video/stop', methods=['POST'])  # backward compatible
 def stop_video_processing():
     """Stop video processing."""
     global video_processor
@@ -398,14 +401,16 @@ def stop_video_processing():
 
     try:
         video_processor.stop()
-        flush_traffic_persistence()
+        if MONITOR_STREAM_AVAILABLE and monitor_streamer:
+            monitor_streamer.stop()
         video_processor = None
         return jsonify({'code': 200, 'message': 'Video processing stopped'})
     except Exception as e:
         return jsonify({'code': 500, 'message': f'Stop failed: {str(e)}'})
 
 
-@video_bp.route('/video/status', methods=['GET'])
+@video_bp.route('/monitor/status', methods=['GET'])
+@video_bp.route('/video/status', methods=['GET'])  # backward compatible
 def get_video_status():
     """Return video processing status."""
     global video_processor
@@ -423,7 +428,8 @@ def get_video_status():
         'code': 200,
         'data': {
             'status': 'running' if video_processor.is_running else 'stopped',
-            'is_running': video_processor.is_running
+            'is_running': video_processor.is_running,
+            'spark_enabled': bool(MONITOR_STREAM_AVAILABLE and monitor_streamer and monitor_streamer.available)
         }
     })
 

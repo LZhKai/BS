@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>车牌识别入库</span>
+          <span>车辆登记</span>
         </div>
       </template>
 
@@ -78,6 +78,9 @@
               </el-form-item>
               <el-form-item label="车主电话">
                 <el-input v-model="formData.ownerPhone" placeholder="可选" />
+              </el-form-item>
+              <el-form-item label="车主地址">
+                <el-input v-model="formData.ownerAddress" placeholder="可选，不填则留空" />
               </el-form-item>
               <el-form-item label="品牌型号" required>
                 <el-input v-model="formData.brandModel" placeholder="必填，如：比亚迪汉EV" />
@@ -162,6 +165,7 @@ const formData = reactive({
   confidence: 0,
   ownerName: '',
   ownerPhone: '',
+  ownerAddress: '',
   brandModel: '',
   description: '',
   status: 'NORMAL'
@@ -216,6 +220,7 @@ const resetCurrent = () => {
   formData.confidence = 0
   formData.ownerName = ''
   formData.ownerPhone = ''
+  formData.ownerAddress = ''
   formData.brandModel = ''
   formData.description = ''
   formData.status = 'NORMAL'
@@ -256,6 +261,7 @@ const confirmSave = async () => {
       plateNumber: formData.plateNumber,
       ownerName: formData.ownerName,
       ownerPhone: formData.ownerPhone,
+      ownerAddress: formData.ownerAddress,
       brandModel: formData.brandModel,
       description: formData.description,
       status: formData.status

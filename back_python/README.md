@@ -6,26 +6,18 @@
 
 ## 功能模块
 
-1. **Spark Streaming实时数据处理**
-   - 接收Kafka消息流
-   - 实时统计车流量
-   - 处理车辆识别结果
-
-2. **视频监控与车辆识别**
+1. **视频监控与车辆识别**
    - 使用OpenCV处理视频流
    - 使用YOLO模型进行车辆检测
    - 车牌识别（可选）
 
-3. **实时数据推送**
-   - WebSocket实时推送车流量数据
+2. **实时数据推送**
    - 实时推送车辆识别结果
 
 ## 技术栈
 
 - Flask：Web框架
 - Flask-SocketIO：WebSocket支持
-- PySpark：实时流处理
-- Kafka：消息队列
 - OpenCV：视频处理
 - YOLO：车辆检测
 - MySQL：数据存储
@@ -38,10 +30,6 @@ back_python/
 ├── config.py              # 配置文件
 ├── requirements.txt       # Python依赖
 ├── src/
-│   ├── streaming/         # Spark Streaming模块
-│   │   ├── __init__.py
-│   │   ├── spark_streaming.py
-│   │   └── kafka_consumer.py
 │   ├── video/              # 视频处理模块
 │   │   ├── __init__.py
 │   │   ├── video_processor.py
@@ -49,7 +37,7 @@ back_python/
 │   │   └── plate_recognizer.py
 │   ├── api/                # API接口
 │   │   ├── __init__.py
-│   │   ├── streaming_api.py
+│   │   ├── streaming_api.py  # SocketIO事件桥接（识别/视频）
 │   │   └── video_api.py
 │   └── utils/              # 工具类
 │       ├── __init__.py
@@ -72,17 +60,11 @@ pip install -r requirements.txt
 创建 `.env` 文件：
 
 ```env
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-KAFKA_TOPIC_VEHICLE=vehicle_detection
-KAFKA_TOPIC_TRAFFIC=traffic_flow
-
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_USER=root
 MYSQL_PASSWORD=123456
 MYSQL_DATABASE=vehicle_management
-
-SPARK_MASTER=local[*]
 ```
 
 ### 3. 启动服务
@@ -97,12 +79,10 @@ python app.py
 
 ### WebSocket接口
 
-- `ws://localhost:5000/stream/traffic` - 实时车流量数据流
 - `ws://localhost:5000/stream/detection` - 实时车辆识别结果流
 
 ### REST API
 
-- `GET /api/traffic/stats` - 获取车流量统计
 - `POST /api/video/process` - 处理视频流
 - `GET /api/detection/history` - 获取识别历史
 
