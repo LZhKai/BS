@@ -1,7 +1,8 @@
 """
 SocketIO bridge used by video/detection features.
 
-Note: The legacy "traffic flow statistics / Spark Streaming" module has been removed.
+Spark micro-batch aggregation is handled by monitor_streaming.MonitorSparkStreamer;
+aggregated metrics are pushed via send_monitor_agg_data().
 """
 from flask_socketio import emit
 

@@ -143,7 +143,9 @@ back_python/
 
 ### 3. Spark Streaming无法启动
 
-（已移除 Spark Streaming 车流量统计模块）
+- 确保已安装 `pyspark==3.5.0` 及对应的 Java 8+ 环境
+- 如果 PySpark 不可用，系统会自动降级为非 Spark 的统计模式，不影响基础识别功能
+- 查看启动日志中是否有 `Warning: monitor_streamer unavailable` 提示
 
 ## 后续开发
 

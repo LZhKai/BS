@@ -121,20 +121,3 @@ INSERT INTO `parking_record` (`vehicle_id`, `plate_number`, `entry_time`, `exit_
 (5, '京E33333', '2025-02-14 23:00:00', '2025-02-15 07:30:00', 510, 15.00, '东门入口', 'EXITED'),
 (18, '京Q33333', '2025-02-16 06:00:00', NULL, NULL, 0.00, '地库专用', 'PARKING'),
 (19, '浙A12345', '2025-02-16 14:00:00', NULL, NULL, 0.00, '南门入口', 'PARKING');
-
-
--- 车流量统计表
-CREATE TABLE IF NOT EXISTS `traffic_flow_stat` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `stat_time` DATETIME NOT NULL COMMENT '统计时间',
-  `entry_count` INT NOT NULL DEFAULT 0 COMMENT '进入数量',
-  `exit_count` INT NOT NULL DEFAULT 0 COMMENT '离开数量',
-  `total_count` INT NOT NULL DEFAULT 0 COMMENT '总车流量',
-  `source` VARCHAR(32) DEFAULT 'realtime' COMMENT '统计来源：realtime/batch/manual',
-  `remark` VARCHAR(255) DEFAULT NULL COMMENT '备注',
-  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  KEY `idx_stat_time` (`stat_time`),
-  KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='车流量统计表';
