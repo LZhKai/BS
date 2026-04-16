@@ -499,8 +499,12 @@ const checkVideoStatus = async () => {
     const wasRunning = !!videoStatus.value.isRunning
     const res = await getVideoStatus()
     if (res.code === 200) {
-      videoStatus.value = res.data
-      sparkEnabled.value = !!res.data.spark_enabled
+      const data = res.data
+      videoStatus.value = {
+        isRunning: !!(data.is_running ?? data.isRunning),
+        status: data.status
+      }
+      sparkEnabled.value = !!data.spark_enabled
       if (wasRunning && !videoStatus.value.isRunning) {
         ElMessage.info('视频已结束，识别已自动停止')
       }

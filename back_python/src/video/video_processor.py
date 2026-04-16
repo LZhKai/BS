@@ -116,7 +116,10 @@ class VideoProcessor:
                                 'fps': self.cap.get(cv2.CAP_PROP_FPS)
                             }
                         )
-                        self.callback(result)
+                        try:
+                            self.callback(result)
+                        except Exception as e:
+                            print(f"Detection callback error: {e}")
                 else:
                     vehicles = self.current_vehicles
 
