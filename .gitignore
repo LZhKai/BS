@@ -42,3 +42,23 @@ back_python/.env
 # Logs
 logs/
 *.log
+
+
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.synctex.gz
+
+# PDF
+*.pdf
+
+# temp dir
+tmp_build/
+
+# Mac / Windows
+.DS_Store
+Thumbs.db
