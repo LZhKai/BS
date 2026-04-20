@@ -53,10 +53,6 @@ TRACK_TTL_FRAMES = int(os.getenv('TRACK_TTL_FRAMES', '20'))
 TRACK_IOU_THRESHOLD = 0.3
 TRACK_CENTER_DIST_THRESHOLD = int(os.getenv('TRACK_CENTER_DIST_THRESHOLD', '100'))
 TRACK_MIN_HITS = int(os.getenv('TRACK_MIN_HITS', '2'))
-FLOW_LINE_Y = int(os.getenv('FLOW_LINE_Y', str(int(Config.VIDEO_HEIGHT * 0.5))))
-FLOW_LINE_DEADZONE = int(os.getenv('FLOW_LINE_DEADZONE', '12'))
-FLOW_ENTRY_DIRECTION = os.getenv('FLOW_ENTRY_DIRECTION', 'down').strip().lower()
-FLOW_CROSS_COOLDOWN_FRAMES = int(os.getenv('FLOW_CROSS_COOLDOWN_FRAMES', '12'))
 tracker_state = {
     'frame_index': 0,
     'next_track_id': 1,
@@ -100,16 +96,6 @@ def _center_distance(box_a, box_b):
     dx = ax - bx
     dy = ay - by
     return (dx * dx + dy * dy) ** 0.5
-
-
-def _line_side(center_y):
-    if center_y is None:
-        return 0
-    if center_y < (FLOW_LINE_Y - FLOW_LINE_DEADZONE):
-        return -1
-    if center_y > (FLOW_LINE_Y + FLOW_LINE_DEADZONE):
-        return 1
-    return 0
 
 
 def _reset_tracker_state():
@@ -181,14 +167,11 @@ def _update_tracks(vehicles):
         'motorcycle': 0
     }
     new_vehicle_count = 0
-    entry_count = 0
-    exit_count = 0
 
     for vehicle in vehicles:
         bbox = vehicle.get('bbox') or []
         vehicle_type = _normalize_vehicle_type(vehicle.get('class'))
         center_y = _bbox_center_y(bbox)
-        current_side = _line_side(center_y)
 
         best_track = None
         best_iou = 0.0
@@ -203,16 +186,10 @@ def _update_tracks(vehicles):
                 best_track = track
 
         if best_track and (best_iou >= TRACK_IOU_THRESHOLD or _center_distance(bbox, best_track['bbox']) <= TRACK_CENTER_DIST_THRESHOLD):
-            prev_center_y = best_track.get('center_y')
-            prev_side = best_track.get('line_side', 0)
-            prev_cross_frame = best_track.get('last_cross_frame', -999999)
-            already_counted = best_track.get('counted_crossing', False)
-
             best_track['bbox'] = bbox
             best_track['last_seen'] = frame_index
             best_track['hits'] += 1
             best_track['center_y'] = center_y
-            best_track['line_side'] = current_side
             if not best_track.get('vehicle_type') and vehicle_type:
                 best_track['vehicle_type'] = vehicle_type
             matched_track_ids.add(best_track['track_id'])
@@ -225,23 +202,6 @@ def _update_tracks(vehicles):
                     tracker_state['total_by_type'][best_track['vehicle_type']] += 1
                     new_by_type[best_track['vehicle_type']] += 1
                 best_track['unique_counted'] = True
-
-            crossed_line = (prev_side in (-1, 1) and current_side in (-1, 1) and prev_side != current_side)
-            cooldown_ok = (frame_index - prev_cross_frame) >= FLOW_CROSS_COOLDOWN_FRAMES
-            if (not already_counted) and crossed_line and cooldown_ok and prev_center_y is not None and center_y is not None:
-                moving_down = center_y > prev_center_y
-                if FLOW_ENTRY_DIRECTION == 'up':
-                    is_entry = not moving_down
-                else:
-                    is_entry = moving_down
-                if is_entry:
-                    entry_count += 1
-                    vehicle['crossing'] = 'entry'
-                else:
-                    exit_count += 1
-                    vehicle['crossing'] = 'exit'
-                best_track['last_cross_frame'] = frame_index
-                best_track['counted_crossing'] = True
             continue
 
         track_id = tracker_state['next_track_id']
@@ -253,9 +213,6 @@ def _update_tracks(vehicles):
             'last_seen': frame_index,
             'hits': 1,
             'center_y': center_y,
-            'line_side': current_side,
-            'last_cross_frame': -999999,
-            'counted_crossing': False,
             'unique_counted': False
         })
         matched_track_ids.add(track_id)
@@ -273,9 +230,7 @@ def _update_tracks(vehicles):
         'new_vehicle_count': new_vehicle_count,
         'new_by_type': new_by_type,
         'unique_vehicle_count': tracker_state['total_unique'],
-        'unique_by_type': dict(tracker_state['total_by_type']),
-        'entry_count': entry_count,
-        'exit_count': exit_count
+        'unique_by_type': dict(tracker_state['total_by_type'])
     }
 
 
@@ -294,10 +249,6 @@ def detection_callback(result):
     result['new_by_type'] = tracking['new_by_type']
     result['unique_vehicle_count'] = tracking['unique_vehicle_count']
     result['unique_by_type'] = tracking['unique_by_type']
-    result['entryCount'] = tracking['entry_count']
-    result['exitCount'] = tracking['exit_count']
-    result['lineY'] = FLOW_LINE_Y
-    result['entryDirection'] = FLOW_ENTRY_DIRECTION
 
     # Default fallback metrics (non-Spark path).
     result['totalCount'] = frame_vehicle_count
