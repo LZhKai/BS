@@ -24,7 +24,7 @@
       </template>
 
       <el-row :gutter="20" class="stats-row">
-        <el-col :span="6">
+        <el-col :span="4">
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-value">{{ detectionStats.totalDetections }}</div>
@@ -32,7 +32,7 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="4">
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-value">{{ detectionStats.currentCount }}</div>
@@ -40,7 +40,7 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="4">
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-value">{{ detectionStats.carCount }}</div>
@@ -48,11 +48,27 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="4">
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-value">{{ detectionStats.truckCount }}</div>
               <div class="stat-label">累计货车数(去重)</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="4">
+          <el-card class="stat-card">
+            <div class="stat-content">
+              <div class="stat-value entry-value">{{ detectionStats.entryCount }}</div>
+              <div class="stat-label">累计进场次数</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="4">
+          <el-card class="stat-card">
+            <div class="stat-content">
+              <div class="stat-value exit-value">{{ detectionStats.exitCount }}</div>
+              <div class="stat-label">累计离场次数</div>
             </div>
           </el-card>
         </el-col>
@@ -163,7 +179,14 @@ const detectionStats = ref({
   totalDetections: 0,
   currentCount: 0,
   carCount: 0,
-  truckCount: 0
+  truckCount: 0,
+  entryCount: 0,
+  exitCount: 0
+})
+
+const flowLine = ref({
+  y: 0,
+  entryDirection: 'down'
 })
 
 const detectionHistory = ref([])
@@ -375,14 +398,29 @@ const appendDetectionHistory = (data) => {
 
 const handleDetectionData = (data) => {
   if (data.type === 'detection_data') {
+    const payload = data.data || {}
+
+    if (typeof payload.entryCount === 'number') {
+      detectionStats.value.entryCount = payload.entryCount
+    }
+    if (typeof payload.exitCount === 'number') {
+      detectionStats.value.exitCount = payload.exitCount
+    }
+    if (typeof payload.lineY === 'number' && payload.lineY > 0) {
+      flowLine.value.y = payload.lineY
+    }
+    if (payload.entryDirection) {
+      flowLine.value.entryDirection = payload.entryDirection
+    }
+
     // Fallback:
     // 1) Spark unavailable -> always use detection stream
     // 2) Spark enabled but aggregate stream stale -> temporarily fallback
     const now = Date.now()
     if (!sparkEnabled.value || now - lastAggUpdateAt > 8000) {
-      updateSummaryCharts(data.data)
+      updateSummaryCharts(payload)
     }
-    appendDetectionHistory(data.data)
+    appendDetectionHistory(payload)
   }
 }
 
@@ -391,6 +429,40 @@ const handleMonitorAggData = (data) => {
     lastAggUpdateAt = Date.now()
     updateSummaryCharts(data.data)
   }
+}
+
+const drawFlowLine = (ctx, width, height) => {
+  const lineY = flowLine.value.y
+  if (!lineY || lineY <= 0 || lineY >= height) return
+
+  ctx.save()
+  ctx.strokeStyle = '#00e5ff'
+  ctx.lineWidth = 2
+  ctx.setLineDash([12, 8])
+  ctx.beginPath()
+  ctx.moveTo(0, lineY)
+  ctx.lineTo(width, lineY)
+  ctx.stroke()
+  ctx.setLineDash([])
+
+  const entryDown = flowLine.value.entryDirection !== 'up'
+  const entryLabel = `进场 ${detectionStats.value.entryCount}  ↓`
+  const exitLabel = `离场 ${detectionStats.value.exitCount}  ↑`
+  const downLabel = entryDown ? entryLabel : exitLabel
+  const upLabel = entryDown ? exitLabel : entryLabel
+
+  ctx.font = 'bold 16px Arial'
+  const pad = 8
+  const drawTag = (text, x, y, bg) => {
+    const w = ctx.measureText(text).width + pad * 2
+    ctx.fillStyle = bg
+    ctx.fillRect(x, y, w, 26)
+    ctx.fillStyle = '#000'
+    ctx.fillText(text, x + pad, y + 18)
+  }
+  drawTag(downLabel, 12, lineY + 6, '#00e5ffCC')
+  drawTag(upLabel, 12, lineY - 32, '#ffd54fCC')
+  ctx.restore()
 }
 
 const handleVideoFrame = (data) => {
@@ -435,6 +507,8 @@ const handleVideoFrame = (data) => {
           ctx.fillText(label, x1 + 5, y1 - 8)
         })
       }
+
+      drawFlowLine(ctx, canvas.width, canvas.height)
     }
 
     img.onerror = () => {
@@ -565,6 +639,14 @@ onBeforeUnmount(() => {
   font-weight: bold;
   color: #409eff;
   margin-bottom: 10px;
+}
+
+.stat-value.entry-value {
+  color: #00b578;
+}
+
+.stat-value.exit-value {
+  color: #f56c6c;
 }
 
 .stat-label {

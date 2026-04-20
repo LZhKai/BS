@@ -297,6 +297,7 @@ def detection_callback(result):
     result['entryCount'] = tracking['entry_count']
     result['exitCount'] = tracking['exit_count']
     result['lineY'] = FLOW_LINE_Y
+    result['entryDirection'] = FLOW_ENTRY_DIRECTION
 
     # Default fallback metrics (non-Spark path).
     result['totalCount'] = frame_vehicle_count
