@@ -506,6 +506,7 @@
     \ctexset {
         chapter = {
         fixskip = true,
+        break = {\clearpage},
         format   = {\centering\zihao{-2}\heiti\bfseries}, % 居中、小二号、黑体
         number   = {\arabic{chapter}},           % 章节号格式：阿拉伯数字
         name     = {},                           % 不显示“第…章”
@@ -553,6 +554,7 @@
     \ctexset {
         chapter = {
           fixskip = true,
+          break = {\clearpage},
           format={\centering\zihao{-2}\heiti},
           nameformat = {\zihao{-2}\heiti},
           beforeskip = {10pt},
